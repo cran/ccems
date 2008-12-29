@@ -1,0 +1,38 @@
+% \VignetteIndexEntry{CCEMS Manual} 
+% \VignetteDepends{ccems}
+
+\documentclass[12pt]{article}
+\usepackage[OT1]{fontenc}
+\usepackage{Sweave}
+\begin{document}
+
+\title{Combinatorially Complex\\ Equilibrium Model Selection}
+\author{Tom Radivoyevitch}
+
+\maketitle
+
+\section{Introduction}
+A conceptual overview of this package is given in the \texttt{ccems} help page.  Please read that first, then the help for
+\texttt{ems} and \texttt{mkg}. An example of how
+this package can be used to design subsequent experiments is given in RtExpDes.pdf in \texttt{doc}. 
+
+This package is being developed according to its author's research in the dNTP supply enzymes ribonucleotide reductase
+(a hexamer), thymidine kinase (a tetramer) and on deck, deoxycytidine kinase (a dimer).  
+Simple enzyme-substrate-inhibitor monomer enzyme models are not in this set. Thus, there are no such examples herein, and 
+the software should not be expected to work on any. The software is expected to work in situations where there is one ligand
+binding the protein, possibly at two different binding sites (of variable binding status) 
+per monomer, and with no limit on the $j$-mer size $j$.  Developments to broader conditions will develop in the future, 
+but only one step at a time, as the author's specific research demands it.   
+
+%<<deModel, results = hide, echo = FALSE>>=
+%library(ccems)
+%@
+
+
+
+
+
+
+
+
+\end{document}
