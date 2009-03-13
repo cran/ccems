@@ -7,7 +7,7 @@
 # 
 #	One of Kj or Kd should be NULL. The other then should be used
 #	print(Kdparams)
-  Kjparams=unlist(Kjparams);pparams=unlist(pparams)
+  Kjparams=unlist(Kjparams);pparams=unlist(pparams);kparams=unlist(kparams)
   if (is.null(Kjparams)&is.null(Kdparams)) {print("One of Kjparams or Kdparams must be specified."); return(0)}
   if (!is.null(Kjparams)&!is.null(Kdparams)) {print("Only one of Kjparams or Kdparams can be specified."); return(0)}
   if (!is.null(Kjparams)) Kj=TRUE else Kj=FALSE
@@ -36,6 +36,7 @@
   
   params = data.frame(initial=Mod(vparams),final=Mod(vparams),opt=(Re(vparams)>0),  # note negative treated like imaginary here
       constr=rep("none",nParams),stringsAsFactors=FALSE)
+#  print(params)
   if (!is.null(Keq)) {
     params[names(Keq),"constr"]=Keq
     params[names(Keq),"opt"]=FALSE 
@@ -46,6 +47,8 @@
   }
   params[Mod(vparams)==Inf,"opt"]=FALSE
   params[Mod(vparams)==0,"opt"]=FALSE
+
+#  print(params)
   
 # switch between these two for numeric versus logical
   if (tightLogic)

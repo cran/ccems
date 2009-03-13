@@ -90,10 +90,11 @@
 # *****************************************
         g$parmsTCC[1:g$nAtomS]=0 # these are overwritten where they are nonzero in the current figure ####### WHERE is this used? 
 #        dyn.load(strn<-paste(wDir,"/gs/",id,.Platform$dynlib.ext,sep="")) 
-        dyn.load(strn<-paste("models/",g$id,.Platform$dynlib.ext,sep="")) 
+       if (g$TCC) dyn.load(strn<-paste("models/",g$id,.Platform$dynlib.ext,sep="")) 
         g$initialStateTCC[]=rep(0,g$nAtomS)
         for (ii in 1:ndf) {
-            g$parmsTCC[paste(g$atomS,"T",sep="")]=as.numeric(dfr[ii,posReactants])
+          g$parmsTCC[paste(g$atomS,"T",sep="")]=as.numeric(dfr[ii,posReactants])
+          if (g$TCC) {
 #            cat("IC is",g$initialStateTCC,"  and parmsTCC is ",g$parmsTCC,"\n")
             e=try(out1 <- lsoda(g$initialStateTCC,times,"myderivs", g$parmsTCC, rtol=g$rtol,atol=g$atol, dllname=g$id)) 
             out=data.frame(out1); names(out)<-c("time",g$atomS)
@@ -103,13 +104,19 @@
             chk[ii,(length(g$atomS)+1):(2*length(g$atomS))]=as.matrix(SS[ii,])%*%as.matrix(g$W[,g$atomS])
             if (typeY=="m") dfr[ii,"EY"]=g$monomerMass*((as.matrix(SS[ii,])%*%as.matrix(g$W[,1]^2)) + 
                             (1-p)*dfr[ii,posReactants[1]])/dfr[ii,posReactants[1]] 
-            if (typeY=="v") dfr[ii,"EY"]=as.matrix(SS[ii,(g$nAtomS+1):g$nSpecieS])%*%as.matrix(g$kis*g$W[g$Z,g$subS]) 
-            if ((typeY=="v")&(!g$TCC)) dfr[ii,"EY"]=g$frp(g$parmsTCC,g$kis) 
+            if (typeY=="v") dfr[ii,"EY"]=as.matrix(SS[ii,(g$nAtomS+1):g$nSpecieS])%*%as.matrix(g$kis*g$W[g$Z,g$subS])
+          }
+            if ((typeY=="v")&(!g$TCC)) {
+#              print(g$kis)
+#              print(g$parmsTCC)
+              dfr[ii,"EY"]=g$frp(g$parmsTCC,g$kis)
+#              print(dfr)
+            }
         }  # end loop through rows of dataframe
         g$echk=chk 
-        dyn.unload(strn)
+        if (g$TCC) dyn.unload(strn)
     } # end block of ODE solutions (i.e. infinitely tight handled by K=.0001)
-    g$eSS=SS
+    if (g$TCC) g$eSS=SS
     if (!doPredict) {
         g$d=dfr
         res=(dfr[,g$posY]-dfr[,"EY"])/mean(dfr[,g$posY])
@@ -127,6 +134,7 @@
         g$predict=dfr
     } 
     options("warn"=1)
+#    print(g)
     return(g)
 }
 

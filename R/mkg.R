@@ -1,5 +1,5 @@
 `mkg` <-
-    function(strct,hubChar="R",monomerMass=90,TCC=FALSE)  
+    function(strct,hubChar="R",monomerMass=90,TCC=TRUE,activity=FALSE)  
 { 
   lets=c(LETTERS,letters)
   nums=paste(0:9)
@@ -114,16 +114,24 @@
 #    source(paste(g$wDir,"/models/",fn,sep=""),local=TRUE)
 #		unlink(paste(g$wDir,"/models/",fn,sep=""))
     strn="frp<-function(parmsTCC,kis) {\n"
-    strn=paste(strn,"        E0 = parmsTCC[\"RT\"]\n         S = parmsTCC[\"ST\"]\n",paste="")
-    for (Zj in g$Z)
-      strn=paste(strn,sprintf("%10s = %s/parmsTCC[\"Kj_%s\"]\n",Zj,paste(strsplit(gsub("R","",Zj,fixed="T"),split="")[[1]],collapse="*"),Zj),sep="")
+    strn=paste(strn,sprintf("%9sT = parmsTCC[\"%sT\"]\n",g$hubChar,g$hubChar),sep="")
+    for (i in 2:g$nAtomS)
+      strn=paste(strn,sprintf("%10s = parmsTCC[\"%sT\"]\n",g$atomS[i],g$atomS[i]),sep="")
+#    strn=paste(strn,"       ET = parmsTCC[\"",g$hubChar,"T\"]\n         S = parmsTCC[\"ST\"];\n",paste="")
+#    for (Zj in g$Z)
+    for (i in 1:g$nZ)
+      {Stothen=paste(rep("S",g$W[g$Z[i],"S"]),collapse="*")
+      strn=paste(strn,sprintf("%10s = %s/parmsTCC[\"Kj_%s\"];\n",g$Z[i],Stothen,g$Z[i]),sep="")
+    }
+      #    strn=paste(strn,sprintf("%10s = %s/parmsTCC[\"Kj_%s\"]\n",Zj,paste(strsplit(gsub("R","",Zj,fixed="T"),split="")[[1]],collapse="*"),Zj),sep="")
     strn=paste(strn,"denom=1",sep="")
     for (i in 1:g$nZ)
       strn=paste(strn,sprintf("+%s%s",g$Z[i],ifelse(i<g$nZ,"","\n")),sep="")
-    strn=paste(strn,"num=E0*(",sep="")
-    for (i in 1:nZ) # look for a built in character within string counter to replace the 2 maker
-      strn=paste(strn,sprintf("%d*kis[\"k%s\"]*%s%s",length(which(strsplit(g$Z[i],split="")[[1]]=="S")),
-              g$Z[i],g$Z[i],ifelse(i<g$nZ,"+",")\n")),sep="")
+    strn=paste(strn,"num=ET*(",sep="")
+    for (i in 1:nZ) # 
+      strn=paste(strn,sprintf("%d*kis[\"k%s\"]*%s%s",g$W[g$Z[i],"S"],g$Z[i],g$Z[i],ifelse(i<g$nZ,"+",")\n")),sep="")
+#    strn=paste(strn,sprintf("%d*kis[\"k%s\"]*%s%s",length(which(strsplit(g$Z[i],split="")[[1]]=="S")),
+#              g$Z[i],g$Z[i],ifelse(i<g$nZ,"+",")\n")),sep="")
     strn=paste(strn,"EY=num/denom\nEY\n}\n\n",sep="")
     g$frp=eval(parse(text=strn))
 #		setwd(g$wDir)
@@ -170,6 +178,58 @@
     endK=substr(strn, i,i)
     paste(basK,basn,"_",endK,sep="")
   }
+  
+  mapStrct<-function(g) {
+    # this function maps the topology in strct to a set of easier to use lists and vectors
+    mylets=c("D","F","L","M","N","Q","V","Y",paste(2:9),"e","f","m","n","q","v","w","y") # leave I and J for inf and free as before
+    jj=length(g$hds) # jj points to nodes
+    iThread=1 # count up all the blocks and index them in order
+    threads=list(NULL)
+    threadsWithinSites=list(NULL)
+    nodesWithinSites=list(NULL)
+    usedLets=character(0)
+    nSites=length(g$strct$sites)
+    dfThreads=data.frame(NULL)
+    for (iSite in 1:nSites) {
+      currSite=g$strct$sites[[iSite]]
+      threadsWithinSites[[iSite]]=as.numeric(NULL)
+      nodesWithinSites[[iSite]]=as.numeric(NULL)
+      for (iOligo in 1:length(currSite)) {
+        currOligo=currSite[[iOligo]]
+        threadSize=length(currOligo)
+        nodes=(jj+1):(jj+threadSize)
+        names(nodes)<-currOligo
+        threads[[iThread]]=list(site=iSite,let=mylets[iThread],nodes=nodes)
+        usedLets=c(usedLets,mylets[iThread])
+        threadsWithinSites[[iSite]]=c(threadsWithinSites[[iSite]],iThread)
+        nodesWithinSites[[iSite]]=c(nodesWithinSites[[iSite]],nodes)
+        iThread=iThread+1
+        jj=jj+threadSize
+      } # iOligo loop through oligos, within sites, i.e. things that can be equal
+      dfThreads=rbind(dfThreads,threadsWithinSites[[iSite]])
+#    iSite=iSite+1
+    } # currSite loop over things that cannot be equal
+    nThreads=iThread-1
+    names(dfThreads)<-names(g$strct$sites[[1]])
+    rownames(dfThreads)<-names(g$strct$sites)
+    names(threads)<-paste("t",1:nThreads,sep="")
+    g$singleThread=(length(g$hds)==0)
+    g$dfThreads=dfThreads
+    g$threads=threads
+    g$threadsWithinSites=threadsWithinSites
+    g$nodesWithinSites=nodesWithinSites
+    if(g$singleThread) usedLets= mylets[g$nodesWithinSites[[1]]]
+    g$usedLets=usedLets
+    g$nThreads=nThreads
+    g$mylets=mylets
+    g$nSites=nSites
+    g
+  }
+  
+  #  ###########  function definitions above
+  
+   
+  
   if (length(strct$heads)==length(strct$sites[[1]])) {
     # check to see if first head is root and if so, eliminate it
     head0=strsplit(strct$heads[1],NULL)[[1]];
@@ -205,7 +265,7 @@
   tmp=NULL
   for (i in 1:length(hdS)) tmp=c(tmp,which(Z==hdS[i])) # convert node names to indices
   hds=tmp
-  print(hds)
+#  print(hds)
   KdS=sapply(reacts,oneLess) # binary Kds 
   KdS[hds]=Z[hds] #of non-head nodes
   initialStateTCC=rep(0,nAtomS) 
@@ -227,13 +287,16 @@
       monomerMass=monomerMass,
 #			wDir=sub("C:","",getwd()),
       TCC=TCC,
+      activity=activity,
       sstime = 1e6,rtol=1e-5,atol=1e-7,
       parmsTCC=parmsTCC,
       initialStateTCC=initialStateTCC
   ); 
+  gObj=mapStrct(gObj)  # this was previously done in mkGrids
   gObj=mkZ(gObj)
   library(odesolve); 
   if (TCC) { gObj=mkgC(gObj); testgC(gObj)} else gObj=mkRP(gObj)
+  if (TCC&activity) print("Warning!!!!!!!!!!!!! TCC does not yet work for activity data.")
   gObj
 }
 

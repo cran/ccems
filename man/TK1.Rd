@@ -9,8 +9,8 @@
 \format{
   A data frame with the following columns.
   \describe{
-    \item{\code{R}}{The total concentration of TK1 enzyme. }
-    \item{\code{d}}{The total concentration of dT (the nucleoside substrate).}
+    \item{\code{E}}{The total concentration of TK1 enzyme. }
+    \item{\code{S}}{The total concentration of dT (the nucleoside substrate).}
     \item{\code{X}}{The total concentration of ATP.}
     \item{\code{v}}{The velocity of the kinase reaction in 1/seconds.}
     \item{\code{fg}}{The figure number in the original paper.}
@@ -36,9 +36,9 @@
 }
 \examples{
 library(ccems)
-data(TK1)
 TK1[1:20,]
-d=subset(TK1,year==2006,select=c(R,d,v))
-plot(d$d,d$v,xlab="Total [dT]", ylab="reaction velocity", main="Birringer et al. PEP 2006 Fig. 4a")
+d=subset(TK1,year==2006,select=c(E,S,v))
+plot(d$S,d$v,xlab="Total [dT]", ylab="reaction velocity", 
+         main="Birringer et al. PEP 2006 Fig. 4a")
 }
 \keyword{datasets}

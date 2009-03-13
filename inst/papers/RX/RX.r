@@ -3,7 +3,7 @@ rm(list=ls(all=TRUE))  # clean up left overs from previous run, though shouldn't
 if (.Platform$OS.type=="windows") home="/users/radivot" else home="/home/radivot"
 source(paste(home,"/start.r",sep=""))  # define host="machineName" in this file
 setwd(home)  # place where models and results will go
-if (1) library(ccems) else { # if 0 source in the package 
+if (0) library(ccems) else { # if 0 source in the package 
   pkgNms=dir(paste(home,"/case/active/ccems/ccems/R",sep=""),full.names=TRUE)
   for (i in pkgNms) source(i)  # source in all of the R files of the package
   RNR=read.table(file=paste(home,"/case/active/rnr/datasets/RNR.txt",sep=""),header=TRUE)
@@ -75,17 +75,11 @@ if(1){  #ah option from ccems help
   )
 }
 
-
 g <- mkg(topology,TCC=TRUE)
-#mkGrids(g,pRows=F) # implicit that R is always a thread head too
-#sp=mkSpurs(g,batchSize=16,maxnPs=3,atLeastOne=FALSE)
-#sp$chunk
 dd=subset(RNR,(year==2002)&(fg==1)&(X>0),select=c(R,X,m,year))
 names(dd)[1:2]=paste(strsplit(g$id,split="")[[1]],"T",sep="") # e.g. c("RT","XT")
-chnkPs <- list(size=1000,n=1,maxnPs=3,extend2maxP=TRUE) # 42 choose 3(2) is 11480(861), so ~12000 spurs 
 cpusPerHost=c("localhost" = 4,"compute-0-0"=4,"compute-0-1"=4,"compute-0-2"=4,"compute-0-3"=4,"compute-0-4"=4) # for tk2
 if ((host=="tk1")|(host=="stdn")) cpusPerHost=cpusPerHost[1]
 if ((host=="dck")|(host=="rnrClust")) cpusPerHost=cpusPerHost[1:4]
-tops=ems(dd,g,cpusPerHost=cpusPerHost,chunkParams=chnkPs,ptype="SOCK",topN=5,IC=100) 
-
+tops=ems(dd,g,cpusPerHost=cpusPerHost,maxTotalPs=3,chunkParams=chnkPs,ptype="SOCK",topN=5,IC=100) 
 

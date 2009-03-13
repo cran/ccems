@@ -1,0 +1,5 @@
+Version 1.0 Initial release 3/5/2009
+
+Version 1.01 3/13/09 Fixed help pages to avoid overhang in automatically generated pdf manual. 
+                    Upgraded codes to handle enzyme activity data. Broke mkGrids up into smaller functions.
+                    Added TK1 example to papers and TK1 data help page. 

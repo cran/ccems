@@ -10,23 +10,26 @@
       model$params[names(pars),"final"]=pars  
 #			if (model$TCC) model=simulateData(model) else model=simulateDataRP(model) 
       model=simulateData(model) 
+#      print(model$SSE$final)
       model$SSE$final   # for a given model, number of params is fixed, so goal is to minimize SSE
     }
     
     model=simulateData(model,init=TRUE)  # computes the initial SSE 
     p0=model$params[model$params[,"opt"],"initial"]
     names(p0)<-row.names(model$params)[model$params[,"opt"]]
+#    print(p0)
     p0nms=names(p0)
     if ((model$nOptParams<-length(p0))>0) {                    
 
       for ( j in 1:model$nOptParams)         
-        if ((p0nms[j]!="p") & (length(grep("_",p0nms[j]))==0)) {
+        if ((p0nms[j]!="p") & (length(grep("_",p0nms[j]))==0) & (length(grep("k",p0nms[j]))==0)) {
           biRcts=sum(model$W[p0nms[j],])-1 # number of binary reactions 
           p0[j]=p0[j]^biRcts 
         }
       
       p0=lapply(p0,log)
-#    print(p0)
+#      print("here0")
+#      print(p0)
       if (model$nOptParams>1) opt<-optim(p0,fopt,hessian=TRUE,model=model) else
         opt<-optim(p0,fopt,method="BFGS",hessian=TRUE,model=model);       
 #  print("here")
@@ -88,7 +91,8 @@
     for ( j in 1:model$nOptParams) {        
       biRcts=sum(model$W[row.names(model$report)[j],])-1 # number of binary reactions 
 #						 biRcts=nchar(row.names(model$report)[j])-1
-      if ((row.names(model$report)[j]=="p")  | length(grep("_",row.names(model$report)[j]))>0) {
+      if ((row.names(model$report)[j]=="p") | (length(grep("_",row.names(model$report)[j]))>0) 
+            | (length(grep("k",row.names(model$report)[j]))>0)) {
         cistrn=c(cistrn,sprintf("(%4.3f, %4.3f)",model$CI[j,"lower"],model$CI[j,"upper"])) 
         pestrn=c(pestrn,sprintf("%4.3f",model$CI[j,"point"])) 
       }

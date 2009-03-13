@@ -54,12 +54,12 @@
         currThreads=t(M[,k,drop=FALSE])
         codes=codes0
         codes[currThreads]=1
-        cat("\n\njj =",jj,"\n"); jj=jj+1
+#        cat("\n\njj =",jj,"\n"); jj=jj+1
 #                print(codes)
         currInfs=matrix(codes,byrow=TRUE,nrow=nSites-1)
 #                print(currInfs)
         codes=apply(currInfs,2,bin2dec)
-        print(codes)
+#        print(codes)
         codeS=c(codeS,paste(codes,collapse=""))
 #                print(codeS)
         strn=strn0 # start with template base of function

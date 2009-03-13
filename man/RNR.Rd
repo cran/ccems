@@ -50,12 +50,13 @@
   reductase. Functional consequences of ATP- and dATP-induced oligomerization of the large subunit. Biochemistry 2002, 41(2):462-474. 
   The first seven rows, by first author Sanath (Sanath Wijerathna of the Dealwis Lab at CWRU), are unpublished. 
 }
-\references{ Radivoyevitch, T. (2008) Equilibrium model selection: dTTP induced R1 dimerization. \emph{BMC Systems Biology} \bold{2}, 15. }
+\references{ Radivoyevitch, T. (2008) Equilibrium model selection: dTTP induced R1 dimerization. 
+     \emph{BMC Systems Biology} \bold{2}, 15. }
 \examples{
 library(ccems)
-data(RNR)
 RNR[1:40,]
 d=subset(RNR,(year==2002)&(fg==1)&(X>0),select=c(R,X,m,year))
-plot(d$X,d$m,xlab="Total [ATP]", ylab="Weight averaged R1 mass", main="Kashlan et al. Biochemistry, 2002, Fig. 1 (DLS data)")
+plot(d$X,d$m,xlab="Total [ATP]", ylab="Weight averaged R1 mass", 
+     main="Kashlan et al. Biochemistry, 2002, Fig. 1 (DLS data)")
 }
 \keyword{datasets}

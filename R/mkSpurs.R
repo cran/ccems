@@ -1,8 +1,8 @@
 `mkSpurs` <-
-    function(g,state=list(globMdlIndex=0,globCmbIndex=0,relCmbIndex=0,config=NULL),maxnPs=NULL,
-        batchSize=500,pRows=FALSE,doTights=FALSE, atLeastOne=TRUE,IC=1) {
+    function(g,state=list(globMdlIndex=0,globCmbIndex=0,relCmbIndex=0,config=NULL),maxnKjPs=NULL,maxTotalPs=NULL,
+        batchSize=500,pRows=FALSE,doTights=FALSE, atLeastOne=TRUE,IC=1,kIC=2) {
   #if (pRows&(batchSize%%100 !=0)) print("please make batchSize a multiple of 100")
-  if (is.null(maxnPs)) maxnPs=g$nZ
+  if (is.null(maxnKjPs)) maxnKjPs=g$nZ
   # *************** cnfgs list made below *******************************	
   ri=state$relCmbIndex
   nbP=length(state$config)
@@ -14,7 +14,7 @@
   maxReached=FALSE
   if (nbP==0) {cnfgs[[1]]=NULL; i=1; nbP=1}
 #	while(i<batchSize) {
-  while((i<batchSize)&(nbP<=maxnPs)) {
+  while((i<batchSize)&(nbP<=maxnKjPs)) {
     X=combn(g$nZ,nbP)
 #		print(X)
     nbC<-dim(X)[2]
@@ -30,7 +30,7 @@
     if (ri==nbC){lastCompleted=nbP; nbP=nbP+1;ri=0} 
   }
 #	print(i)
-  if (nbP>maxnPs) maxReached=TRUE
+  if (nbP>maxnKjPs) maxReached=TRUE
   batchSize=i  # 
 #	print(cnfgs)
   
@@ -89,7 +89,7 @@
   spurKs=data.frame(spurKs)
   if(atLeastOne) { #then model must have at least one term of maximum size oligo
     zor1=lapply(spurKs,"%in%",c(0,1)) 
-    newW=g$W[-(1:(g$nAtomS-1)),"R"]  # leave one atom row in as spacer for nParams column of chunk 
+    newW=g$W[-(1:(g$nAtomS-1)),g$hubChar]  # leave one atom row in as spacer for nParams column of chunk 
     colNums=which(newW==max(newW))
     Irows<-apply(as.matrix(as.data.frame(zor1[colNums])),1,sum)>0
     spurKs=spurKs[Irows,] # grab rows with at least one complex of maximum size 
@@ -102,8 +102,61 @@
   mainCols=spurKs[,2:(ncols-2)]
   mainCols[mainCols==1]=IC
   spurKs[,2:(ncols-2)]=mainCols
-  spurKs=spurKs[spurKs$nParams<=maxnPs,] # now trim it down to just those with up to maxnPs parameters
-  list(chunk=spurKs,state=state,maxReached=maxReached,lastCompleted=lastCompleted)
+  spurs=spurKs
+  if (g$activity) {
+    kCols=mainCols
+    kCols[kCols==IC]=kIC
+    kCols[kCols==Inf]=0
+    names(kCols)<-paste("k",g$Z,sep="")
+    spurs=cbind(spurKs[,1:(ncols-2)],kCols,spurKs[,(ncols-1):ncols])
+    Mrnms=lapply(uni<-unique(spurs[,"nParams"]),mkSingleThread,g)
+    names(Mrnms)<-paste("p",uni,sep="")
+#    print(Mrnms)    
+    condens<-function(x) apply(x,1,paste,collapse="")
+    Crnms=lapply(Mrnms,condens)
+    print(Crnms)
+    lens=lapply(Crnms,length)
+    print(lens)
+    prepkPs<-function(x) apply(x,1,unique)
+    countkPs<-function(x) sapply(x,length)
+    unikPs=lapply(Mrnms,prepkPs)
+    print(unikPs)
+    nkPs=lapply(unikPs,countkPs)
+    print(nkPs)
+    rowList=NULL
+    for (i in 1:dim(spurs)[1]){
+      tmp=spurs[i,,drop=FALSE]
+      pn=paste("p",tmp$nParams,sep="")
+      knms=Crnms[[pn]];
+      for (j in 1:length(knms)) {
+        tmp0=tmp        
+        Knm=rownames(tmp)
+        knm=strsplit(Knm,split=NULL)[[1]]
+        knmsj=strsplit(knms[j],split=NULL)[[1]]
+        pntrs=which(knm=="J")
+#        print("pntrs are")
+#        print(pntrs)
+#        print("knm is")
+#        print(knm)
+#        print("knmsj is")
+#        print(knmsj)
+        knm=rep("0",length(knm))
+        if (length(pntrs)>0) for (kk in 1:length(pntrs)) knm[pntrs[kk]]=knmsj[kk]
+        knm=paste(knm,collapse="")
+        rownames(tmp0)<-paste(Knm,knm,sep=".")
+        tmp0$nParams=tmp0$nParams+nkPs[[pn]][j]
+        rowList=rbind(rowList,tmp0)
+      }
+    } 
+    rowList=rowList[order(rowList$nParams),]
+    rowList$indx=1:(dim(rowList)[1])
+    print(rowList)
+    spurs=rowList
+  }
+  if (!g$activity) keqs=NULL else keqs=mkEq(g,spurs,activity=TRUE)
+  # now trim it down to just those with up to maxTotalPs parameters
+  if (!is.null(maxTotalPs)) spurs=spurs[spurs$nParams<=maxTotalPs,] 
+  list(chunk=spurs,state=state,maxReached=maxReached,lastCompleted=lastCompleted,keqs=keqs)
 }
 
 #incConfig<-function(state,N) {
