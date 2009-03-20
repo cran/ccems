@@ -1,8 +1,8 @@
 `ems` <-
     function(d,g,cpusPerHost=c("localhost" = 1),ptype="", 
-        spurChunkSize=500, nSpurChunks=1,maxTotalPs=5,extend2maxP=TRUE,smart=FALSE,
+        spurChunkSize=1000, nSpurChunks=1,maxTotalPs=5,extend2maxP=TRUE,smart=FALSE,
         pRows=FALSE,doTights=FALSE,doGrids=TRUE,doSpurs=TRUE,topN=5,showConstr=FALSE,
-        atLeastOne=TRUE,IC=1,kIC=2,fullGrid=FALSE) {
+        atLeastOne=TRUE,IC=1,kIC=1,fullGrid=FALSE) {
   
   if(maxTotalPs<2) doGrids=FALSE
   
@@ -202,7 +202,7 @@
   print(totTime<-difftime(Sys.time(),t0,units="mins")) 
   globalTopN[[1]]$totTime=as.numeric(totTime)
 #  save(globalTopN,file=paste("results/",globalTopN[[1]]$msid,"topN.RData",sep=""))
-  save(globalTopN,file=paste("results/",g$id,"top.RData",sep=""))
+  save(globalTopN,file=paste("results/",g$id,maxTotalPs,"K",IC,"k",kIC,"top",topN,ifelse(is.null(d$weights),"","W"),".RData",sep=""))
   getAIC <- function(x) { x$sreport["AIC","final"]}
   aic=sapply(allModels,getAIC)
   indx=sort.list(aic)

@@ -4,7 +4,7 @@
 \description{ This function takes \code{g} from \code{mkg} and maps it into a 
               dataframe of grid model definitions. It also augments and returns the input list \code{g}. }
 \usage{ mkGrids (g,maxTotalPs=NULL,pRows=FALSE,contig=TRUE, atLeastOne=TRUE, 
-                                 IC=1,kIC=2,fullGrid=FALSE) }
+                                 IC=1,kIC=1,fullGrid=FALSE) }
 \arguments{
   \item{g}{ The output of \code{mkg}. }
   \item{maxTotalPs}{ The maximum number of parameters of models in the model space. 
@@ -16,8 +16,8 @@
   \item{atLeastOne}{ Leave \code{TRUE} if only models with at least one complex of maximal size are 
             to be considered. Set \code{FALSE} if there is no
                      prior knowledge supportive of the assertion that the largest oligomer must be in the model.}
-  \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1}. }
-  \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{kIC=2}. }
+  \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1} (in uM). }
+  \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{kIC=1} (in 1/seconds per occupied active site). }
    \item{fullGrid}{ Set \code{TRUE} if full binary K models are wanted, e.g. to obtain grid 
    reparameterizations of full
    spur models to form model averages across common binary K parameters. }

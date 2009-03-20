@@ -6,7 +6,7 @@
   If \code{TCC} is \code{TRUE} (default) it also automatically generates 
   and compiles total concentration constraint C code and stores it in the \code{models} subdirectory.
 }
-\usage{ mkg(strct,hubChar="R",monomerMass=90,TCC=TRUE,activity=FALSE) }
+\usage{ mkg(strct,monomerMass=90,TCC=TRUE,activity=FALSE) }
 \arguments{
   \item{strct}{ The thread topology of the equilibrium network 
   (see \code{\link{ccems}}). The slots of this list structure are:
@@ -16,8 +16,7 @@
       character vectors of non-head thread nodes. 
                            Naming conventions are given below under \code{Z}. 
                            }
-  \item{hubChar}{ The hub protein's single character representation. The default is R for the big (R1) subunit of ribonucleotide reductase (RNR).  }
-  \item{monomerMass}{The hub protein's monomer mass in kDa. The default is 90 for the R1 subunit of RNR. }
+  \item{monomerMass}{The hub protein's monomer mass in kDa. The default is 90 for the big (R1) subunit of ribonucleotide reductase (RNR). }
   \item{TCC}{This is \code{TRUE} if total concentration constraints (TCCs) are to be used. If so, model C code is automatically generated
   and compiled. If \code{TCC} is \code{FALSE} a rational polynomial model is automatically generated as an R function component of the output.  
   Use of rational polynomial models assumes that the approximations [Xfree] = [XT] are reasonable for all non-hub species X (i.e. ligands).}
@@ -27,10 +26,11 @@
 
 \details{This function is typically the first \code{ccems} function called in a script. 
   It creates a list of objects generic to the entire model space, i.e. a model space kernel.
-}
+  }
 \value{
  A list comprised of the inputs and the following: 
   \item{id }{The biochemical equilibrium system ID. This is the set of single character reactant representations collapsed into one string. }
+  \item{hubChar }{The first character of the first name in \code{strct}. As of ver 1.02 this is no longer a passed option. }
   \item{Z }{The names of the hub protein complexes expressed as single character reactant symbols followed by the number of copies of it in the complex.
   For example, R2t1 is a dimer of R with one bound ligand t, R2t2 is saturated dimer, and R2t0 is ligand free dimer. 
   The choice of the symbol Z for hub complexes derives from its common use as a complex number. }

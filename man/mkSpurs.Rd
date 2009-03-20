@@ -6,7 +6,7 @@
 }
 \usage{mkSpurs(g,state=list(globMdlIndex=0,globCmbIndex=0,relCmbIndex=0,
          config=NULL), maxnKjPs=NULL, maxTotalPs=NULL, batchSize=500, 
-         pRows=FALSE, doTights=FALSE,atLeastOne=TRUE,IC=1,kIC=2) }
+         pRows=FALSE, doTights=FALSE,atLeastOne=TRUE,IC=1,kIC=1) }
 
 \arguments{
   \item{g}{ The generic model output list of \code{mkg}. }
@@ -47,8 +47,8 @@
    \item{atLeastOne}{ Leave \code{TRUE} if only models with at least one complex 
                     of maximal size are to be considered. Set \code{FALSE} if there is no
                      prior knowledge supportive of the assertion that the largest oligomer must be in the model.}
-   \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1}. }
-   \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{IC=2}. }
+  \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1} (in uM). }
+  \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{kIC=1} (in 1/seconds per occupied active site). }
                            
 }
 \details{ This function is complicated by the fact that one readily runs out of memory 

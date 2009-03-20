@@ -111,7 +111,7 @@ topology <- list(
         )
     )
 )
-g <- mkg(topology,hubChar="E",activity=TRUE,TCC=FALSE)
+g <- mkg(topology,activity=TRUE,TCC=FALSE)
 dd=subset(TK1,(year==2000),select=c(E,S,v)) # Berenstein et al
 names(dd)[1:2]= c("ET","ST")
 tops=ems(dd,g,maxTotalPs=3,kIC=30000) 

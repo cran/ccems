@@ -1,6 +1,6 @@
 `mkModel` <-
     function(g,mid,d=NULL,Kjparams=NULL,Kdparams=NULL,Keq=NULL,Kd2KjLst=NULL,pparams=c(p=1i),kparams=NULL,keq=NULL,
-             tightLogic=TRUE,indx=NULL,nParams=NULL)  
+        tightLogic=TRUE,indx=NULL,nParams=NULL)  
 { 
 # Numbers on the left half plane or imaginary axis are fixed to their (complex number) modulus. Thus, either purely imaginary numbers or 
 # negative numbers can be used as initial parameter values as a conventient way to indicate that the parameter values are to be fixed. 
@@ -47,7 +47,7 @@
   }
   params[Mod(vparams)==Inf,"opt"]=FALSE
   params[Mod(vparams)==0,"opt"]=FALSE
-
+  
 #  print(params)
   
 # switch between these two for numeric versus logical
@@ -60,7 +60,7 @@
   }
   
 #	codeS=NULL  
-  codeS="default" # 
+  codeS="default"
   bin2dec <- function(x)  sum(x * 2^(rev(seq(along=x)) - 1))  # by Burt Gunter, uses c(1,0,1,1)=11 format
   if(!is.null(Kd2KjLst)) 
     if(length(Kd2KjLst)>1) { 
@@ -95,6 +95,7 @@
 #			print(ncode)
 #			codeS=ncode
     }
+  
   typeYD=NULL
   posY=NULL
   posReactantsD=NULL

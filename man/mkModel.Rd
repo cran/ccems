@@ -74,7 +74,8 @@ The input object \code{g} augmented to include the arguments \code{d}, \code{mid
   concentrations (system inputs) in the data dataframe \code{d}.}
 The value returned by this function is a model object that is ready to be fitted by \code{fitModel}.  
 }
-\note{This work was supported by the National Cancer Institute (K25CA104791).}
+\note{E-shaped topologies found in the BMC SB 2008 reference are not supported in \code{ccems}. 
+This work was supported by the National Cancer Institute (K25CA104791).}
 \author{Tom Radivoyevitch (txr24@case.edu) }
 \references{ Radivoyevitch, T. (2008) Equilibrium model selection: dTTP induced R1 dimerization. \emph{BMC Systems Biology} \bold{2}, 15. }
 \seealso{\code{\link{mkg}}, \code{\link{mkKd2Kj}} and \code{\link{fitModel}}. }

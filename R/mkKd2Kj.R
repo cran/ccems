@@ -25,8 +25,8 @@
       if ((hdPowers[1]==1)&(hdPowers[2]==0)) thread="1" else  thread=paste("x[",which(g$Z==hd),"]", sep="")
 #			cat("\nInitial thread is ",thread,"\n")
       threadSize=length(currNodes)
-      ifactors=threadSize:1
-      ifactors=ifactors/rev(ifactors); 
+      ifactors=1:threadSize
+      ifactors=ifactors/rev(ifactors);  # fixed to reciprical TR 3/15/09
 #			print(ifactors)
       for (kk in 1:threadSize) {
         thread=paste(thread,"*x[",jj,"]*",ifactors[kk],sep="")

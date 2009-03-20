@@ -1,5 +1,5 @@
 `mkg` <-
-    function(strct,hubChar="R",monomerMass=90,TCC=TRUE,activity=FALSE)  
+    function(strct,monomerMass=90,TCC=TRUE,activity=FALSE)  
 { 
   lets=c(LETTERS,letters)
   nums=paste(0:9)
@@ -10,7 +10,8 @@
     setwd("models")
 #		print("in mkgC")
     ofile=file(fn<-paste(g$id,".c",sep=""),"wt")
-    cat(sprintf("/* compile with R CMD SHLIB %s.c or (on Windows) Rcmd SHLIB %s.c */\n",g$id,g$id),file=ofile)
+#    cat(sprintf("/* compile with R CMD SHLIB %s.c or (on Windows) R CMD SHLIB %s.c */\n",g$id,g$id),file=ofile)
+    cat(sprintf("/* compile with R CMD SHLIB %s.c */\n",g$id),file=ofile)
     cat("#include <R.h> /* gives F77_CALL through R_ext/RS.h */\n\n",file=ofile)
     pnames=names(g$parmsTCC)
     cat(sprintf("static double parms[%d];\n",length(pnames)),file=ofile)
@@ -48,7 +49,9 @@
     close(ofile)
 # note: cpu time savings of putting in blanks for multiplications by 0 and 1 was neglibible => something else is making this 2x slower than 
 # hard coding without masks.  
-    if (.Platform$OS.type=="windows") system(sprintf("Rcmd SHLIB %s.c\n",g$id)) else  system(sprintf("R CMD SHLIB %s.c\n",g$id))
+# system(sprintf("R CMD SHLIB %s.c\n",g$id))
+ system(sprintf("%s CMD SHLIB %s.c\n",file.path(R.home("bin"), "R"), g$id))
+#    if (.Platform$OS.type=="windows") system(sprintf("Rcmd SHLIB %s.c\n",g$id)) else  system(sprintf("R CMD SHLIB %s.c\n",g$id))
 #    system(sprintf("mv %s%s  bin\n",id,.Platform$dynlib.ext))
     unlink(sprintf("%s.o",g$id))
     unlink(sprintf("%s.d",g$id))
@@ -241,6 +244,8 @@
   Z=unlist(strct)
   nZ=length(Z);
   reacts=strsplit(Z,NULL);
+  hubChar=reacts[[1]][1]
+#  cat("\nhubChar is ",hubChar,"\n")
   names(reacts)<-Z
   atomS=union(hubChar,setdiff(unlist(reacts),paste(0:9,sep=""))) # union makes sure central/hub protein is first
   nAtomS=length(atomS)
@@ -275,10 +280,10 @@
   pnamesTCC=c(paste(atomS,"T",sep=""),"p",paste("Kj",Z,sep="_"))
   names(parmsTCC)<-pnamesTCC
   gObj=list(id=id,
+      hubChar=hubChar, 
       Z=Z,nZ=nZ,
       atomS=atomS, nAtomS=nAtomS,
       specieS=specieS, nSpecieS=nSpecieS,
-      hubChar=hubChar, 
       reactantS=reactantS,
       strct=strct,
       W=W,

@@ -1,6 +1,6 @@
 `mkSpurs` <-
     function(g,state=list(globMdlIndex=0,globCmbIndex=0,relCmbIndex=0,config=NULL),maxnKjPs=NULL,maxTotalPs=NULL,
-        batchSize=500,pRows=FALSE,doTights=FALSE, atLeastOne=TRUE,IC=1,kIC=2) {
+        batchSize=500,pRows=FALSE,doTights=FALSE, atLeastOne=TRUE,IC=1,kIC=1) {
   #if (pRows&(batchSize%%100 !=0)) print("please make batchSize a multiple of 100")
   if (is.null(maxnKjPs)) maxnKjPs=g$nZ
   # *************** cnfgs list made below *******************************	
@@ -97,18 +97,21 @@
     spurKs[,"indx"]=(state$globMdlIndex+1):(state$globMdlIndex+mbatchSize)  
   }
   cat("mbatchSize = ",mbatchSize,"\n")
-  state$globMdlIndex=state$globMdlIndex+mbatchSize
+  
   ncols=dim(spurKs)[2]
-  mainCols=spurKs[,2:(ncols-2)]
-  mainCols[mainCols==1]=IC
-  spurKs[,2:(ncols-2)]=mainCols
+  KCols=spurKs[,2:(g$nZ+1)]
+  KCols[KCols==1]=IC
+  spurKs[,2:(g$nZ+1)]=KCols
+#  mainCols=spurKs[,2:(ncols-2)]
+#  mainCols[mainCols==1]=IC
+#  spurKs[,2:(ncols-2)]=mainCols
   spurs=spurKs
   if (g$activity) {
-    kCols=mainCols
-    kCols[kCols==IC]=kIC
-    kCols[kCols==Inf]=0
+    kCols=KCols
+    kCols[KCols==IC]=kIC
+    kCols[KCols==Inf]=0
     names(kCols)<-paste("k",g$Z,sep="")
-    spurs=cbind(spurKs[,1:(ncols-2)],kCols,spurKs[,(ncols-1):ncols])
+    spurs=cbind(spurKs[,1:(g$nZ+1)],kCols,spurKs[,(g$nZ+2):(g$nZ+3)])
     Mrnms=lapply(uni<-unique(spurs[,"nParams"]),mkSingleThread,g)
     names(Mrnms)<-paste("p",uni,sep="")
 #    print(Mrnms)    
@@ -156,6 +159,7 @@
   if (!g$activity) keqs=NULL else keqs=mkEq(g,spurs,activity=TRUE)
   # now trim it down to just those with up to maxTotalPs parameters
   if (!is.null(maxTotalPs)) spurs=spurs[spurs$nParams<=maxTotalPs,] 
+  state$globMdlIndex=state$globMdlIndex+dim(spurs)[1]
   list(chunk=spurs,state=state,maxReached=maxReached,lastCompleted=lastCompleted,keqs=keqs)
 }
 

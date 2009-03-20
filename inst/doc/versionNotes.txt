@@ -1,5 +1,26 @@
 Version 1.0 Initial release 3/5/2009
 
 Version 1.01 3/13/09 Fixed help pages to avoid overhang in automatically generated pdf manual. 
-                    Upgraded codes to handle enzyme activity data. Broke mkGrids up into smaller functions.
-                    Added TK1 example to papers and TK1 data help page. 
+                     Upgraded codes to handle enzyme activity data. Broke mkGrids up into smaller functions.
+                     Added TK1 example to ccems-package help page as a laptop example. 
+                    
+Version 1.02 3/20/09 A major bug in mkKd2Kj was fixed (factors were reciprocals of what they should be!). 
+
+                     A new papers/BMCsysBio08 directory was added to include 
+                     actively maintained derivatives of the original script Rt.r.
+
+                     hubchar is no longer an option of mkg and is instead now always the first char of 
+                     first name in strct, which should always be the root (i.e. free hub) name. 
+                     
+                     bug that kIC must be different from IC has been fixed
+                     
+                     a weights column is now allowed in the data dataframe. The weights are divided
+                     by their means before entering the SSE to minimize their effect on SSE and AIC.
+                     Since the weights multiply the residuals before their inner product is made to form 
+                     SSE, the weights should be reciprocal std dev (not variances). In TK1.r v data 
+                     with v<Vmax/2 is weighted more heavily than data with v>Vmax/2, i.e. 2 variance bins are used. 
+                     
+                     
+                          
+                    
+                    

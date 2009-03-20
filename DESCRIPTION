@@ -1,8 +1,8 @@
 Package: ccems
 Type: Package
 Title: Combinatorially Complex Equilibrium Model Selection
-Version: 1.01
-Date: 2009-03-13
+Version: 1.02
+Date: 2009-03-20
 Author: Tom Radivoyevitch
 Maintainer: Tom Radivoyevitch <txr24@case.edu>
 Description: Dissociation constants of quasi-equilibriums of enzymes
@@ -18,6 +18,6 @@ License: GPL-2
 LazyLoad: yes
 LazyData: yes
 URL: http://epbi-radivot.cwru.edu/ccems
-Packaged: Sat Mar 14 05:59:57 2009; radivot
+Packaged: Fri Mar 20 20:13:13 2009; radivot
 Repository: CRAN
-Date/Publication: 2009-03-14 11:06:21
+Date/Publication: 2009-03-21 08:16:14

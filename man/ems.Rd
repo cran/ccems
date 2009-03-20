@@ -4,10 +4,10 @@
 \description{ This is the main automation function of this package. It generates a space of  
                  combinatorially complex equilibrium models and fits them to data.}
 \usage{ems(d, g, cpusPerHost=c("localhost" = 1), ptype="",
-          spurChunkSize=500, nSpurChunks=1,maxTotalPs=5,extend2maxP=TRUE, 
+          spurChunkSize=1000, nSpurChunks=1,maxTotalPs=5,extend2maxP=TRUE, 
           smart=FALSE,pRows=FALSE,doTights=FALSE,doGrids=TRUE,
           doSpurs=TRUE,topN=5,showConstr=FALSE,atLeastOne=TRUE,
-          IC=1,kIC=2,fullGrid=FALSE)}
+          IC=1,kIC=1,fullGrid=FALSE)}
 \arguments{
   \item{d}{ The data as a dataframe.}
   \item{g}{ The list output of \code{mkg}. }
@@ -49,8 +49,8 @@
   \item{showConstr}{ Set to \code{TRUE} if constrained (fixed and tracking) parameters are to be included in the html report in \code{results}.}
   \item{atLeastOne}{ Leave \code{TRUE} if only models with at least one complex of maximal size are to be considered. Set \code{FALSE} if there is no
                      prior knowledge supportive of the assertion that the largest oligomer must be in the model.}
-  \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1}. }
-  \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{IC=2}. }
+  \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1} (in uM). }
+  \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{kIC=1} (in 1/seconds per occupied active site). }
   \item{fullGrid}{ Set \code{TRUE} if a full binary K model is wanted, else grids that are 
                    equivalent to spurs are eliminated from the model space. }
  }

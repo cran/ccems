@@ -1,5 +1,5 @@
 `mkGrids` <-
-    function(g,maxTotalPs=NULL,pRows=FALSE,contig=TRUE,atLeastOne=TRUE,IC=1,kIC=2,fullGrid=FALSE) {
+    function(g,maxTotalPs=NULL,pRows=FALSE,contig=TRUE,atLeastOne=TRUE,IC=1,kIC=1,fullGrid=FALSE) {
   # This function makes a chunk of grid graph models. It is less advanced than its counterpart mkSpurs because I still need a way
   # of going through this model space systematically with increasing numbers of parameters. Thus, it does 
   # not have state inputs and output. Note that it is implicit that R is always a thread head too
@@ -234,13 +234,13 @@
     Bmats
   }   # END mkBigMats function definition
   
-  mkk<-function(chunK,chunk,g,kIC){
-    ncols=length(chunK)
-    meat=chunk[,2:(g$nZ+1)]
+  mkk<-function(Kchunk,kchunk,g,kIC){
+    ncols=length(Kchunk)
+    meat=kchunk[,2:(g$nZ+1)]
     meat[]=kIC
     names(meat)<-paste("k",g$Z,sep="")
-    rnms1=rownames(chunK)
-    rnms2=rownames(chunk)
+    rnms1=rownames(Kchunk)
+    rnms2=rownames(kchunk)
     #    newBmats=cbind(2*Bmats[1,1,drop=F],Bmats[1,2:(g$nZ+1),drop=F],meat[1,,drop=F],Bmats[1,(g$nZ+2):ncols,drop=F])
     newBmats=NULL
 #    print(newBmats)
@@ -249,8 +249,8 @@
     for (i in 1:length(rnms1))
       for (j in 1:length(rnms2)) {
 #        for (j in ifelse(i==1,2,1):length(rnms)) {
-        newBmats=rbind(newBmats,cbind(chunK[i,1,drop=F]+chunk[j,1,drop=F],
-                chunK[i,2:(g$nZ+1),drop=F],meat[j,,drop=F],chunK[i,(g$nZ+2):ncols,drop=F]))
+        newBmats=rbind(newBmats,cbind(Kchunk[i,1,drop=F]+kchunk[j,1,drop=F],
+                Kchunk[i,2:(g$nZ+1),drop=F],meat[j,,drop=F],Kchunk[i,(g$nZ+2):ncols,drop=F]))
         brnms=c(brnms,paste(rnms1[i],rnms2[j],sep=".") )
       }
 #    print(brnms)
@@ -315,10 +315,9 @@
   if (!is.null(maxTotalPs)) chunk=chunk[chunk$nParams<=maxTotalPs,]
   chunk$indx=1:(dim(chunk)[1])
 # new block to handle user defined ICs on K params (for readability only bases are entered in chunk)
-  ncols=dim(chunk)[2]
-  mainCols=chunk[,2:(ncols-2)]
-  mainCols[mainCols==1]=IC
-  chunk[,2:(ncols-2)]=mainCols
+  KCols=chunk[,2:(g$nZ+1)]
+  KCols[KCols==1]=IC
+  chunk[,2:(g$nZ+1)]=KCols
   if (!g$activity) keqs=NULL 
   list(chunk=chunk,Keqs=Keqs,keqs=keqs)
 }
