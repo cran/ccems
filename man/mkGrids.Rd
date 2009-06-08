@@ -3,24 +3,40 @@
 \title{ Make Grid Model Space }
 \description{ This function takes \code{g} from \code{mkg} and maps it into a 
               dataframe of grid model definitions. It also augments and returns the input list \code{g}. }
-\usage{ mkGrids (g,maxTotalPs=NULL,pRows=FALSE,contig=TRUE, atLeastOne=TRUE, 
-                                 IC=1,kIC=1,fullGrid=FALSE) }
+\usage{ mkGrids (g,maxTotalPs=NULL,minTotalPs=NULL,contig=TRUE,
+                atLeastOne=TRUE,atLeastOneOfEach=FALSE, 
+                KIC=1,kIC=1,fullGrid=FALSE,
+                m1=-90,p=-1,forceM1=FALSE,forceP=FALSE) }
 \arguments{
   \item{g}{ The output of \code{mkg}. }
   \item{maxTotalPs}{ The maximum number of parameters of models in the model space. 
-        If \code{NULL} all models are found (but see \code{fulGrid} below). }
-  \item{pRows}{ Set to \code{TRUE} if additional rows are to be added to the output dataframe to include models 
-               with \code{p} freely estimated. }
+        If \code{NULL} all models are found (but see \code{fullGrid} below). }
+  \item{minTotalPs}{ The minimum number of parameters of models in the model space.
+        If \code{NULL} no minimum is imposed. }
   \item{contig}{ Set to \code{TRUE} to allow Kd equalities of threads only in contiguous runs. Tentatively, 
   this should always be \code{TRUE}.}
   \item{atLeastOne}{ Leave \code{TRUE} if only models with at least one complex of maximal size are 
             to be considered. Set \code{FALSE} if there is no
                      prior knowledge supportive of the assertion that the largest oligomer must be in the model.}
-  \item{IC}{ The initial condition of all K parameters optimized. The default is \code{IC=1} (in uM). }
+   \item{atLeastOneOfEach}{ Set \code{TRUE} if only models with at least one complex 
+                    of each oligomer size are to be considered. This is useful when the data are multivariate
+                    proportions (i.e. mass distribution data) and each j-mer is clearly present. }
+  \item{KIC}{ The initial condition of all K parameters optimized. The default is \code{IC=1} (in uM). }
   \item{kIC}{ The initial condition of all k parameters optimized. The default is \code{kIC=1} (in 1/seconds per occupied active site). }
-   \item{fullGrid}{ Set \code{TRUE} if full binary K models are wanted, e.g. to obtain grid 
-   reparameterizations of full
-   spur models to form model averages across common binary K parameters. }
+   \item{fullGrid}{ Set \code{TRUE} if a full binary K model is wanted, else grids that are 
+                   equivalent to spurs are eliminated from the model space. 
+          This is used to obtain grid reparameterizations of full spur models to 
+          form model averages across common binary K parameters.  }
+   \item{m1}{The hub protein's monomer mass in kDa. 
+               The default is 90 for the big (R1) subunit of ribonucleotide reductase (RNR).
+               This only matters if the data is mass data. Negative numbers imply fixed values and
+                positive numbers imply starting values to be fitted to the data.}
+  \item{p}{ Probability that hub can oligomerize, i.e. is not damaged. 
+      Set to a positive value if additional rows are to be added to the output dataframe to include models 
+               with \code{p} freely estimated. Set negative to hold fixed. Value is the initial or fixed value.}
+  \item{forceM1}{ Set \code{TRUE} to force all models to estimate M1, i.e. to not generate models with M1 fixed. } 
+  \item{forceP}{ Set \code{TRUE} to force all models to estimate p, i.e. to not generate models with fixed p. } 
+ 
 }
 \details{In a run of equal threads, the first head node of the run is the leader (optimized parameter) and the remaining nodes in the run are followers 
 (i.e. constrained to track the leader in parameter estimate optimizations); 
@@ -55,8 +71,8 @@ a default in \code{ems} is that only leader estimates are reported in html
   \item{Keqs}{A list of K equality constraints indexed by 
   model names where each element is a vector of character strings whose names are followers and
              values are leaders. }
- \item{keqs}{Similar to \code{Keqs} but for activities parameter constraints. This is \code{NULL} if 
-    \code{activity} in \code{g} is \code{TRUE}. }
+ \item{keqs}{Similar to \code{Keqs} but for activity constraints. This is \code{NULL} if 
+    \code{activity} in \code{g} is \code{FALSE}. }
 }
 
 \note{This work was supported by the National Cancer Institute (K25CA104791).}
@@ -75,7 +91,7 @@ topology <- list(
                 )
         )
 ) 
-g <- mkg(topology,TCC=TRUE) 
+g <- mkg(topology) 
 gridL <- mkGrids(g) 
 print(gridL$chunk)
 topology <- list(
@@ -97,7 +113,7 @@ topology <- list(
 )
 
 
-g <- mkg(topology,TCC=TRUE) 
+g <- mkg(topology) 
 gridL <- mkGrids(g,maxTotalPs=2) 
 print(gridL$chunk)
 

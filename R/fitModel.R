@@ -4,9 +4,12 @@
   fitModelSub <- function(model) { # subroutine of fitModel. This function existed well before the parent fitmodel function and
     # there may be a way to integrate them together to have smoother code, i.e. their relationship was 
     # not designed but rather driven by convenience given that fitModelSub already existed. 
-    
+#    print(getwd())
     fopt <- function(pars,model) {
       pars=exp(pars)
+      spt=which(names(pars)=="p")
+      if (length(spt)==1) pars[spt]=pars[spt]/(1+pars[spt])
+#      if ("p")
       model$params[names(pars),"final"]=pars  
 #			if (model$TCC) model=simulateData(model) else model=simulateDataRP(model) 
       model=simulateData(model) 
@@ -22,21 +25,27 @@
     if ((model$nOptParams<-length(p0))>0) {                    
 
       for ( j in 1:model$nOptParams)         
-        if ((p0nms[j]!="p") & (length(grep("_",p0nms[j]))==0) & (length(grep("k",p0nms[j]))==0)) {
+        if ((p0nms[j]!="p") & (p0nms[j]!="m1") & (length(grep("_",p0nms[j]))==0) & (length(grep("k",p0nms[j]))==0)) {
           biRcts=sum(model$W[p0nms[j],])-1 # number of binary reactions 
           p0[j]=p0[j]^biRcts 
         }
       
-      p0=lapply(p0,log)
+      np0=sapply(p0,log)
+#      print(np0)
+      spt=which(names(np0)=="p")
+#      print(spt)
+      if (length(spt)==1) np0[spt] = log(.9/(1-.9)) # if optimized assume it starts at 0.9 instead of 1 to avoid Inf
+      p0=np0
 #      print("here0")
-#      print(p0)
-      if (model$nOptParams>1) opt<-optim(p0,fopt,hessian=TRUE,model=model) else
+#      print(p0)                                                        # maxit default=500 for Nelder-Meade (default)
+      if (model$nOptParams>1) opt<-optim(p0,fopt,hessian=TRUE,model=model,control=list(maxit=5000)) else
         opt<-optim(p0,fopt,method="BFGS",hessian=TRUE,model=model);       
 #  print("here")
 #    attach(model)
 #			nOptp=length(tmp<-intersect(c("p"),names(p0)) ) # zero or one
 #			model$fitid=paste(paste(model$id,model$nZ,sep=""),model$nOptParams-nOptp,nOptp,sep=".") # try life without this
       sg<-sqrt(opt$value/(model$nData-model$nOptParams))
+#      print("sg="); print(sg)
       if (det(opt$hessian)>0) 
       {sig=sg*sqrt(diag(solve(opt$hessian/2)));model$hess=TRUE} else
       {sig=Inf;model$hess=FALSE} 
@@ -45,10 +54,16 @@
       point=signif(opt$par,3)
       CI=cbind(lower,point,upper)
       CI=exp(CI); opar<-exp(opt$par)
-      model$params[names(opar),"final"]=opar
+      if (length(spt)==1) {
+        CI[spt,]=CI[spt,]/(1+CI[spt,])
+        opar[spt]=opar[spt]/(1+opar[spt])
+      }
+        model$params[names(opar),"final"]=opar
 #    detach(model)
       model=simulateData(model)  # computes the final SSE 
       cat("\n")
+#      print(CI)
+#      print(opar)
       model$CI=CI
 #     model=simulateData(model,fine=TRUE) # create smooth curve for publication
     } else   {#print("length p0=0 => nothing to fit"); 
@@ -58,7 +73,7 @@
     # if (is.null(model$AIC$final)) model$AIC$final=100
     # if (is.na(model$AIC$final)) model$AIC$final=100
     model
-  }
+  }   # end fitModelSub
   # now start actual function fitModels
   # This stuff was initially driven by a need to use lapply on lists of models.  It grew from there
   # and now is primarily concerned with making the report ready for the html output, e.g. time taken to fit. 
@@ -91,7 +106,7 @@
     for ( j in 1:model$nOptParams) {        
       biRcts=sum(model$W[row.names(model$report)[j],])-1 # number of binary reactions 
 #						 biRcts=nchar(row.names(model$report)[j])-1
-      if ((row.names(model$report)[j]=="p") | (length(grep("_",row.names(model$report)[j]))>0) 
+      if ((row.names(model$report)[j]=="p") | (row.names(model$report)[j]=="m1") |(length(grep("_",row.names(model$report)[j]))>0) 
             | (length(grep("k",row.names(model$report)[j]))>0)) {
         cistrn=c(cistrn,sprintf("(%4.3f, %4.3f)",model$CI[j,"lower"],model$CI[j,"upper"])) 
         pestrn=c(pestrn,sprintf("%4.3f",model$CI[j,"point"])) 

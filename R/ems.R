@@ -1,10 +1,14 @@
 `ems` <-
     function(d,g,cpusPerHost=c("localhost" = 1),ptype="", 
-        spurChunkSize=1000, nSpurChunks=1,maxTotalPs=5,extend2maxP=TRUE,smart=FALSE,
-        pRows=FALSE,doTights=FALSE,doGrids=TRUE,doSpurs=TRUE,topN=5,showConstr=FALSE,
-        atLeastOne=TRUE,IC=1,kIC=1,fullGrid=FALSE) {
+        spurChunkSize=1000, nSpurChunks=1,maxTotalPs=5,minTotalPs=NULL,extend2maxP=TRUE,smart=FALSE,
+        doTights=FALSE,doGrids=TRUE,doSpurs=TRUE,topN=10,showConstr=FALSE,
+        atLeastOne=TRUE,atLeastOneOfEach=FALSE,KIC=1,kIC=1,fullGrid=FALSE,
+        transform=c("boxCox","relResid","none","sqrt","log"),lam=0.5,
+        m1=-90,p=-1,forceM1=FALSE,forceP=FALSE) {
   
+  transform=match.arg(transform)
   if(maxTotalPs<2) doGrids=FALSE
+  if(maxTotalPs>(topN-1)) topN=maxTotalPs+1 # carry all params or no point in going there
   
   mysum<-function(x) sum(x$params$opt)  # sum the numer of parameters fitted/optimized
   
@@ -14,7 +18,7 @@
   # for use with lapply on model lists
   
   myXAIC <- function(x) {#cat("x$AIC are ",x$AIC[[1]],x$AIC[[2]],"\n")
-    # if(is.null(x$AIC)|is.nan(x$AIC)) {x=list(); x$AIC$final=100}
+#    if(is.null(x$AIC)|is.nan(x$AIC)) {x=list(); x$AIC$final=1000}
     if(!is.numeric(x$AIC$final)) {x=list();
       x$AIC$final=1e6}
     x$AIC$final[1]}
@@ -86,7 +90,9 @@
       strn=rep(hosts,times=cpusPerHost)
       cl <- makeCluster(strn, type=ptype, verbose=TRUE) # this one can work either way
     }
+    print(clusterCall(cl, function() getwd()))
     print(clusterCall(cl, function() Sys.info()[c("nodename","machine")]))
+    clusterEvalQ(cl, require(PolynomF))
     clusterEvalQ(cl, require(odesolve))
     clusterEvalQ(cl, require(ccems))  # functions already all there from global library(ccems) in parent script
 #    clusterExport(cl,ls(.GlobalEnv))
@@ -109,7 +115,8 @@
   { # loop on chunks
     if (i==1) state=list(globMdlIndex=ifelse(doGrids,dim(chunk)[1],0),globCmbIndex=0,relCmbIndex=0,config=NULL)
     if (i==0) {
-      ng=mkGrids(g,maxTotalPs=maxTotalPs,pRows=pRows,IC=IC,kIC=kIC,fullGrid=fullGrid) # ng for n-shaped grid
+      ng=mkGrids(g,maxTotalPs=maxTotalPs,minTotalPs=minTotalPs,atLeastOneOfEach=atLeastOneOfEach,
+          KIC=KIC,kIC=kIC,fullGrid=fullGrid,m1=m1,p=p,forceM1=forceM1,forceP=forceP) # ng for n-shaped grid
 #      g=ng$g
       chunk=ng$chunk
       Keqs=ng$Keqs
@@ -117,8 +124,9 @@
 #      print(ng)
       Kmapping=mkKd2Kj(g)
     } else  {
-      sp=mkSpurs(g,state,maxTotalPs=maxTotalPs,batchSize=spurChunkSize,pRows=pRows,
-          doTights=doTights,IC=IC,kIC=kIC)
+      sp=mkSpurs(g,state,maxTotalPs=maxTotalPs,minTotalPs=minTotalPs,batchSize=spurChunkSize,
+          doTights=doTights,atLeastOneOfEach=atLeastOneOfEach,KIC=KIC,kIC=kIC,
+          m1=m1,p=p,forceM1=forceM1,forceP=forceP)
       chunk=sp$chunk
       state=sp$state
 #			print(sp)
@@ -138,22 +146,22 @@
     for (j in mdlNames){ 
 #			print(j);print(i) 
       if (i>0)  {
-        if (!g$activity) models[[j]]=mkModel(g,j,d,Kjparams=chunk[j,g$Z], pparams=chunk[j,"p",drop=FALSE],indx=chunk[j,"indx"],
-              nParams=chunk[j,"nParams"])
+        if (!g$activity) models[[j]]=mkModel(g,j,d,Kjparams=chunk[j,g$Z], pparams=chunk[j,c("p","m1"),drop=FALSE],indx=chunk[j,"indx"],
+              nParams=chunk[j,"nParams"],transform=transform,lam=lam)
         if (g$activity) models[[j]]=mkModel(g,j,d,Kjparams=chunk[j,g$Z], 
               pparams=chunk[j,"p",drop=FALSE],indx=chunk[j,"indx"], nParams=chunk[j,"nParams"],
-              kparams=chunk[j,paste("k",g$Z,sep="")],keq=keqs[[j]])
+              kparams=chunk[j,paste("k",g$Z,sep="")],keq=keqs[[j]],transform=transform,lam=lam)
       } else {
         if (!g$activity)   models[[j]]=mkModel(g,j,d,Kdparams=chunk[j,2:(g$nZ+1),drop=FALSE], 
             Keq=Keqs[[j]],                Kd2KjLst=Kmapping,
-            pparams=chunk[j,"p",drop=FALSE],indx=chunk[j,"indx"],nParams=chunk[j,"nParams"])
+            pparams=chunk[j,c("p","m1"),drop=FALSE],indx=chunk[j,"indx"],nParams=chunk[j,"nParams"],transform=transform,lam=lam)
       if (g$activity)   models[[j]]=mkModel(g,j,d,Kdparams=chunk[j,2:(g$nZ+1),drop=FALSE], 
             Keq=Keqs[[lmdlNames[[j]][1]]],Kd2KjLst=Kmapping,
             pparams=chunk[j,"p",drop=FALSE],indx=chunk[j,"indx"],nParams=chunk[j,"nParams"],
-            kparams=chunk[j,paste("k",g$Z,sep="")],keq=keqs[[lmdlNames[[j]][2]]])
+            kparams=chunk[j,paste("k",g$Z,sep="")],keq=keqs[[lmdlNames[[j]][2]]],transform=transform,lam=lam)
     } 
     }
-    msid=paste(g$id,nSpurChunks,"p",i,ptype,sep="")
+    msid=paste(g$id,nSpurChunks,"p",i,sep="")
 #		print(msid)
 #		print(models)
     nMS=length(models)
@@ -164,8 +172,13 @@
     if ((ptype=="PVM")|(ptype=="NWS")|(ptype=="SOCK")|(ptype=="MPI")) fmodels=clusterApplyLB(cl,models,fitModel)
     if (ptype=="")     fmodels=lapply(models,fitModel) # single processor
     allModels=c(allModels,lapply(fmodels,getShort))
+#    print(allModels)
+#    print(length(fmodels))
     aic=sapply(fmodels,myXAIC)   # fmodels = fitted models
     tmp=tapply(aic,nump,min)
+#    print(aic)
+#    print(nump)
+#    print(tmp)
     curBestAics[sort(unique(nump))+1]=tmp      
     print(totTime<-difftime(Sys.time(),t0,units="mins")) # print("about to call grab10 on fmodels")
     smodels=grabTopN(fmodels,topN=topN) # cat("\n length of smodels after grabTop10 is ",length(smodels),"\n")
@@ -180,8 +193,9 @@
     print(msid)
     mkHTML(smodels,showConstr=showConstr)
 #    if (.Platform$OS.type!="windows")	system("r2w") # this puts the file out where it can be grabbed on the internet
-    gBestAics= apply(cbind(gBestAics,curBestAics),1,min)
-    bestAicsCompleted = gBestAics[1:(lastCompleted+1)]      
+    gBestAics= apply(cbind(gBestAics,curBestAics),1,min) # error in here when MaxNps > topN-1 (zero params is first element)
+    bestAicsCompleted = gBestAics[1:(lastCompleted+1)] 
+#    print("global Best AICs (gBestAICS) are")
 #		print(gBestAics)
     print(bestAicsCompleted)
     globalTopN=c(globalTopN,smodels)
@@ -194,7 +208,7 @@
     if (maxReached) done=TRUE
     if (lastCompleted>0) if ( smart & (bestAicsCompleted[lastCompleted+1]>bestAicsCompleted[lastCompleted]) )  done = TRUE
   }  # loop through chunks indexed by i
-  globalTopN[[1]]$msid=paste(g$id,"glob",ptype,sep="")
+  globalTopN[[1]]$msid=paste(g$id,maxTotalPs,sep="")
   globalTopN[[1]]$nMS=ifelse(!doSpurs,dim(chunk)[1],state$globMdlIndex)  # total over all chunks
   globalTopN[[1]]$hists=pCnts
   globalTopN[[1]]$bestAics=gBestAics
@@ -202,12 +216,12 @@
   print(totTime<-difftime(Sys.time(),t0,units="mins")) 
   globalTopN[[1]]$totTime=as.numeric(totTime)
 #  save(globalTopN,file=paste("results/",globalTopN[[1]]$msid,"topN.RData",sep=""))
-  save(globalTopN,file=paste("results/",g$id,maxTotalPs,"K",IC,"k",kIC,"top",topN,ifelse(is.null(d$weights),"","W"),".RData",sep=""))
+  save(globalTopN,file=paste("results/",g$id,maxTotalPs,"top",topN,ifelse(is.null(d$weights),"","W"),".RData",sep=""))
   getAIC <- function(x) { x$sreport["AIC","final"]}
   aic=sapply(allModels,getAIC)
   indx=sort.list(aic)
   sAllModels=allModels[indx]
-  save(sAllModels,file=paste("results/",g$id,maxTotalPs,"K",IC,"k",kIC,".RData",sep=""))
+  save(sAllModels,file=paste("results/",g$id,maxTotalPs,".RData",sep=""))
 #  save(sAllModels,file=paste("results/",globalTopN[[1]]$msid,"ic",IC,".RData",sep=""))
   aicFt=aic[aic!=1e6]  # next two lines are FYI
   cat("Fitted = ", length(aicFt),", out of a total of ",length(aic),"\n")

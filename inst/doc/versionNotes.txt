@@ -20,6 +20,21 @@ Version 1.02 3/20/09 A major bug in mkKd2Kj was fixed (factors were reciprocals 
                      SSE, the weights should be reciprocal std dev (not variances). In TK1.r v data 
                      with v<Vmax/2 is weighted more heavily than data with v>Vmax/2, i.e. 2 variance bins are used. 
                      
+Version 1.03         4/9/09  New bug in mkSpurs found and fixed (by adding maxnKjPs=maxTotalPs if g$activity is false).
+                     Increased default topN to 10 and increased it to maxTotalPs+1 if it is
+                     less than or equal to it. This avoids errors if the user sets maxTotalPs>=topN.
+                     Removed normalization on residuals. Added g field option for box-cox with lambda = 0.5 for k data. 
+                     5/1/09 Added minTotalPs option to ems, mkSpurs and mkGrids
+                     5/11/09 moved transformation and monomer mass into mkModels and ems, since it is data oriented
+                     and also gave options to types of transformations.
+                     5/13/09 changed IC to KIC to gain clear symmetry with kIC
+                     5/20/09 fixed p to go as e^c/(1+e^c) and back as c= log(p/(1-p)). Let monomer mass be estimated.
+                     6/1/09 added opts to force a mass or p estimate (i.e. to shrink space in these cases). Replaced
+                     pRows logical outside mkSpurs and mkGrids with p to allow passes of initial values and to 
+                     gain symmetry with m1 parameter (negative is fixed, positive is estimated, value is initial or fixed
+                     value). 
+                     6/7/09  Added multivariate proportions (mass distributions) as an output type. Modified mkg to make
+                     c code where all non-hub reactants are free concentrations (e.g. in SEC). 
                      
                           
                     

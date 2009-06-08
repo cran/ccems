@@ -33,22 +33,23 @@
 		nRows=dim(g$report)[1]
 		biRcts=sum(g$W[row.names(g$report)[1],])-1 # number of binary reactions 
 		# print("just before nOptParams in makeHTML")
-		if ((g$nOptParams!=0) & (row.names(g$report)[1]!="p")  &  (length(grep("_",row.names(g$report)[1]))==0)
+		if ((g$nOptParams!=0) & (row.names(g$report)[1]!="p")  & 
+          (row.names(g$report)[1]!="m1") & (length(grep("_",row.names(g$report)[1]))==0)
                       &  (length(grep("k",row.names(g$report)[1]))==0))
 			repS=c(repS,sprintf("<TR><TH>%d %s.%d</TH><TD>%s</TD><TD>%4.3f^%d</TD><TD>%4.3f^%d</TD><TD>%s</TD></TR>",i,g$mid,g$indx,
-							row.names(g$report)[1],g$report[1,"initial"],biRcts,g$report[1,"final"]^(1/biRcts),biRcts,g$report[1,"confidenceInterval"])) else
+			 row.names(g$report)[1],g$report[1,"initial"],biRcts,g$report[1,"final"]^(1/biRcts),biRcts,g$report[1,"confidenceInterval"])) else
 			repS=c(repS,sprintf("<TR><TH>%d %s.%d</TH><TD>%s</TD><TD>%4.3f</TD><TD>%4.3f</TD><TD>%s</TD></TR>",i,g$mid,g$indx,
-							row.names(g$report)[1],g$report[1,"initial"], g$report[1,"final"],g$report[1,"confidenceInterval"])) 
+						row.names(g$report)[1],g$report[1,"initial"], g$report[1,"final"],g$report[1,"confidenceInterval"])) 
 		for (j in 2:nRows)		{
 			biRcts=sum(g$W[row.names(g$report)[j],])-1 # number of binary reactions 
 			if (j <= ifelse(showConstr,g$nZ+1,g$nOptParams))  
-				if ((row.names(g$report)[j]!="p")  & (length(grep("_",row.names(g$report)[j]))==0) 
+				if ((row.names(g$report)[j]!="p")  & (row.names(g$report)[j]!="m1")  & (length(grep("_",row.names(g$report)[j]))==0) 
                          & (length(grep("k",row.names(g$report)[j]))==0))
 					repS=c(repS,sprintf("<TR><TD>&nbsp;</TD><TD>%s</TD><TD>%4.3f^%d</TD><TD>%4.3f^%d</TD><TD>%s</TD></TR>",
-									row.names(g$report)[j],g$report[j,"initial"],biRcts,g$report[j,"final"]^(1/biRcts),biRcts,g$report[j,"confidenceInterval"])) else
+				row.names(g$report)[j],g$report[j,"initial"],biRcts,g$report[j,"final"]^(1/biRcts),biRcts,g$report[j,"confidenceInterval"])) else
 					repS=c(repS,sprintf("<TR><TD>&nbsp;</TD><TD>%s</TD><TD>%4.3f</TD><TD>%4.3f</TD><TD>%s</TD></TR>",
 									row.names(g$report)[j],g$report[j,"initial"], g$report[j,"final"],g$report[j,"confidenceInterval"]))
-			if (j > g$nZ+1) 
+			if (j > ifelse(g$activity,2*g$nZ,g$nZ)+2) 
 				repS=c(repS,sprintf("<TR><TD>&nbsp;</TD><TD>%s</TD><TD>%4.3f</TD><TD>%4.3f</TD><TD>%s</TD></TR>",
 								row.names(g$report)[j],g$report[j,"initial"], g$report[j,"final"],g$report[j,"confidenceInterval"]))
 		} 

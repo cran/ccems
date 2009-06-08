@@ -1,5 +1,5 @@
 `mkg` <-
-    function(strct,monomerMass=90,TCC=TRUE,activity=FALSE)  
+    function(strct,TCC=TRUE,activity=FALSE,free=FALSE)  
 { 
   lets=c(LETTERS,letters)
   nums=paste(0:9)
@@ -25,11 +25,14 @@
 #		print(g$specieS)
     cat(sprintf(" double %s;\n",paste(g$specieS,sep='',collapse=',')),file=ofile)
 #		print(g$atomS)
-    for (i in 1:g$nAtomS) cat(sprintf("  %s = statevec[%d];",g$atomS[i],i-1),file=ofile)
+    if (!g$free) for (i in 1:g$nAtomS) cat(sprintf("  %s = statevec[%d];",g$atomS[i],i-1),file=ofile) else {
+      for (i in 1:1) cat(sprintf("  %s = statevec[%d];",g$atomS[i],i-1),file=ofile)
+      for (i in 2:g$nAtomS) cat(sprintf("  %s = %s;",g$atomS[i],pnames[i]),file=ofile)
+    }
     print(g$Z)
     cat("\n",file=ofile)
     for (Zj in g$Z) cat(sprintf("%10s = %s/Kj_%s;\n",Zj,paste(g$reactantS[[Zj]],collapse="*"),Zj),file=ofile)
-    for (i in 1:g$nAtomS)
+    for (i in 1:ifelse(g$free,1,g$nAtomS))
     {
       if (i==1)      cat(sprintf("ODERHSvec[%d] = p*%sT ",i-1,g$atomS[i]),file=ofile) else
         cat(sprintf("ODERHSvec[%d] =     %sT ",i-1,g$atomS[i]),file=ofile)
@@ -62,24 +65,6 @@
   }
   
   mkZ <- function(g) {  # Adds the R function fback to the g object. 
-#        if (sum(dir()=="models")==0) system("mkdir models")
-#        setwd("models")
-#        #    setwd(paste(g$wDir,"models",sep="/"))
-#        ofile=file(fn<-paste(g$id,".r",sep=""),"wt")
-#        cat("fback<-function(atoms, parmsTCC) {\n",file=ofile)
-#        for (i in 1:g$nAtomS)
-#            cat(sprintf("%10s = atoms[%d];\n",g$atomS[i],i),file=ofile)
-#        for (Zj in g$Z)
-#            cat(sprintf("%10s = %s/parmsTCC[\"Kj_%s\"];\n",Zj,paste(g$reactantS[[Zj]],collapse="*"),Zj),file=ofile)
-#        cat("c(",file=ofile)
-#        for (i in 1:g$nSpecieS)
-#            cat(sprintf("%s=%s%s",g$specieS[i],g$specieS[i],ifelse(i<length(g$specieS),",",")\n}\n\n")),file=ofile)
-#        close(ofile)
-#        source(fn,local=TRUE)
-#        unlink(fn)
-#    source(paste(g$wDir,"/models/",fn,sep=""),local=TRUE)
-#    unlink(paste(g$wDir,"/models/",fn,sep=""))
-#        g$fback=fback
     strn="fback<-function(atoms, parmsTCC) {\n"
     for (i in 1:g$nAtomS)
       strn=paste(strn,sprintf("%10s = atoms[%d];\n",g$atomS[i],i),sep="")
@@ -89,58 +74,64 @@
     for (i in 1:g$nSpecieS)
       strn=paste(strn,sprintf("%s=%s%s",g$specieS[i],g$specieS[i],ifelse(i<length(g$specieS),",",")\n}\n\n")),sep="")
     g$fback=eval(parse(text=strn))
-    #		setwd(g$wDir)
-#        setwd("..")
     g
   }
   
   mkRP <- function(g) {
-#        if (sum(dir()=="models")==0) system("mkdir models")
-#        setwd("models")
-#        ofile=file(fn<-paste("rp",g$id,".r",sep=""),"wt")
-#        cat("frp<-function(parmsTCC,kis) {\n",file=ofile)
-#        cat("        E0 = parmsTCC[\"RT\"]\n         S = parmsTCC[\"ST\"]\n",file=ofile)
-#        for (Zj in g$Z)
-#            cat(sprintf("%10s = %s/parmsTCC[\"Kj_%s\"]\n",Zj,paste(strsplit(gsub("R","",Zj,fixed="T"),split="")[[1]],collapse="*"),Zj),file=ofile)
-#        cat("#free R cancels from num and denom, so in here only to label complex assoc with term\n",file=ofile)
-#        cat("denom=1",file=ofile)
-#        for (i in 1:g$nZ)
-#            cat(sprintf("+%s%s",g$Z[i],ifelse(i<g$nZ,"","\n")),file=ofile)
-#        cat("num=E0*(",file=ofile)
-#        for (i in 1:nZ) # look for a built in character within string counter to replace the 2 maker
-#            cat(sprintf("%d*kis[\"k%s\"]*%s%s",length(which(strsplit(g$Z[i],split="")[[1]]=="S")),
-#                            g$Z[i],g$Z[i],ifelse(i<g$nZ,"+",")\n")),file=ofile)
-#        cat("EY=num/denom\nEY\n}\n\n",file=ofile)
-#        close(ofile)
-#        source(fn,local=TRUE)
-#        unlink(fn)
-#    source(paste(g$wDir,"/models/",fn,sep=""),local=TRUE)
-#		unlink(paste(g$wDir,"/models/",fn,sep=""))
     strn="frp<-function(parmsTCC,kis) {\n"
-    strn=paste(strn,sprintf("%9sT = parmsTCC[\"%sT\"]\n",g$hubChar,g$hubChar),sep="")
     for (i in 2:g$nAtomS)
       strn=paste(strn,sprintf("%10s = parmsTCC[\"%sT\"]\n",g$atomS[i],g$atomS[i]),sep="")
-#    strn=paste(strn,"       ET = parmsTCC[\"",g$hubChar,"T\"]\n         S = parmsTCC[\"ST\"];\n",paste="")
-#    for (Zj in g$Z)
     for (i in 1:g$nZ)
       {Stothen=paste(rep("S",g$W[g$Z[i],"S"]),collapse="*")
       strn=paste(strn,sprintf("%10s = %s/parmsTCC[\"Kj_%s\"];\n",g$Z[i],Stothen,g$Z[i]),sep="")
     }
-      #    strn=paste(strn,sprintf("%10s = %s/parmsTCC[\"Kj_%s\"]\n",Zj,paste(strsplit(gsub("R","",Zj,fixed="T"),split="")[[1]],collapse="*"),Zj),sep="")
     strn=paste(strn,"denom=1",sep="")
     for (i in 1:g$nZ)
       strn=paste(strn,sprintf("+%s%s",g$Z[i],ifelse(i<g$nZ,"","\n")),sep="")
-    strn=paste(strn,"num=ET*(",sep="")
+    strn=paste(strn,"num=(1/",max(g$W[,"S"]),")*(",sep="")
     for (i in 1:nZ) # 
       strn=paste(strn,sprintf("%d*kis[\"k%s\"]*%s%s",g$W[g$Z[i],"S"],g$Z[i],g$Z[i],ifelse(i<g$nZ,"+",")\n")),sep="")
-#    strn=paste(strn,sprintf("%d*kis[\"k%s\"]*%s%s",length(which(strsplit(g$Z[i],split="")[[1]]=="S")),
-#              g$Z[i],g$Z[i],ifelse(i<g$nZ,"+",")\n")),sep="")
     strn=paste(strn,"EY=num/denom\nEY\n}\n\n",sep="")
     g$frp=eval(parse(text=strn))
-#		setwd(g$wDir)
-#        setwd("..")
     g
   }
+
+  mkPoly <- function(g) {
+    strn="fpoly<-function(parmsTCC) {\n"
+    strn=paste(strn,sprintf("%10sT = parmsTCC[\"%sT\"]\n",g$atomS[1],g$atomS[1]),sep="")
+    for (i in 2:g$nAtomS)
+      strn=paste(strn,sprintf("%10s = parmsTCC[\"%sF\"]\n",g$atomS[i],g$atomS[i]),sep="")
+    strn=paste(strn,sprintf("%10s = 1\n","R"),sep="")
+    for (i in 1:g$nZ)
+    {Stothen=paste(rep(g$atomS[2],g$W[g$Z[i],2]),collapse="*")
+      strn=paste(strn,sprintf("%10s = %s/parmsTCC[\"Kj_%s\"];\n",g$Z[i],Stothen,g$Z[i]),sep="")
+    }
+    uniW=unique(g$W[,1])
+    newW=g$W[-2,1,drop=FALSE]
+    rnms=row.names(newW)
+    pows=1:max(uniW)
+#    print(rnms)
+#    print(newW)
+    strn=paste(strn,"Rpoly=c(RT,",sep="")
+    for (j in pows) { print(j)
+      str<-paste(rnms[which(newW==j)],collapse="+")
+      if (str=="") str="0"
+      strn=paste(strn,str,sep=ifelse((j<=max(uniW))&(j>1),",",""))
+    }
+    strn=paste(strn,")*c(-1,", 1,":",max(uniW) ,")\n",sep="")
+    strn=paste(strn,"Rpoly=as.polynom(Rpoly)\n",sep="")
+    strn=paste(strn,"rts=solve(Rpoly)\n",sep="")
+#    strn=paste(strn,"rts=polyroot(Rpoly)\n",sep="")
+#    strn=paste(strn,"print(rts)\n",sep="")
+    strn=paste(strn,"out<-Re(rts[(Mod(Im(rts))<1e-6)&(Re(rts)>0)])\n",sep="")
+#    strn=paste(strn,"out<-Re(rts[Im(rts)==0])\n",sep="")
+#    strn=paste(strn,"print(out)\n",sep="")
+    strn=paste(strn,"out\n}\n\n",sep="")
+    g$fpoly=eval(parse(text=strn))
+    g
+  }
+  
+  
   
   conv2long<-function(react) {
     tmp=""
@@ -249,7 +240,8 @@
   names(reacts)<-Z
   atomS=union(hubChar,setdiff(unlist(reacts),paste(0:9,sep=""))) # union makes sure central/hub protein is first
   nAtomS=length(atomS)
-  id=paste(atomS,collapse="")
+#  id=paste(atomS,ifelse(free,"F",""),sep="")
+  id=paste(paste(atomS,collapse=""),ifelse(free,"F",""),sep="")
 #	print(id)
   reactantS=strsplit(sapply(reacts,conv2long),NULL)
   specieS=c(atomS,Z)
@@ -275,10 +267,12 @@
   KdS[hds]=Z[hds] #of non-head nodes
   initialStateTCC=rep(0,nAtomS) 
   names(initialStateTCC)<-atomS
+  if (free) initialStateTCC=initialStateTCC[1]
 #  parmsTCC=c(rep(1,nAtomS),1,rep(100,nZ))  # this won't work because spurs matrix ICs overwrite this
   parmsTCC=c(rep(1,nAtomS),1,rep(1,nZ))
-  pnamesTCC=c(paste(atomS,"T",sep=""),"p",paste("Kj",Z,sep="_"))
+  pnamesTCC=c(paste(atomS[1],"T",sep=""),paste(atomS[-1],ifelse(free,"F","T"),sep=""),"p",paste("Kj",Z,sep="_"))
   names(parmsTCC)<-pnamesTCC
+  print(parmsTCC)
   gObj=list(id=id,
       hubChar=hubChar, 
       Z=Z,nZ=nZ,
@@ -288,11 +282,13 @@
       strct=strct,
       W=W,
       KdS=KdS,
+      KS=KdS,
+      kS=paste("k",Z,sep=""),
       hdS=hdS,hds=hds,
-      monomerMass=monomerMass,
 #			wDir=sub("C:","",getwd()),
       TCC=TCC,
       activity=activity,
+      free=free,
       sstime = 1e6,rtol=1e-5,atol=1e-7,
       parmsTCC=parmsTCC,
       initialStateTCC=initialStateTCC
@@ -300,8 +296,12 @@
   gObj=mapStrct(gObj)  # this was previously done in mkGrids
   gObj=mkZ(gObj)
   library(odesolve); 
-  if (TCC) { gObj=mkgC(gObj); testgC(gObj)} else gObj=mkRP(gObj)
-  if (TCC&activity) print("Warning!!!!!!!!!!!!! TCC does not yet work for activity data.")
+#  gObj=mkgC(gObj)
+  if (TCC&!free) { gObj=mkgC(gObj); testgC(gObj)} else {
+    if (activity) gObj=mkRP(gObj)
+  }
+  if (free) { library(PolynomF); gObj=mkPoly(gObj)}
+#  if (free) { library(polynom); gObj=mkPoly(gObj)}
   gObj
 }
 

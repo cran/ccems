@@ -44,7 +44,7 @@ lines(df3$tT,df3$EY,lty="dashed")
 
 #redo with both datasets to show that 3M is now #1 (3Rp was for d1)
 models=list(
-    mkModel(g,"HDLL",dd,Kdparams=c(R2t0=150,R1t0_t=25,R2t0_t=.55, R2t1_t=.55),Keq=c(R2t1_t="R2t0_t"),Kd2Kj=Kmappings),
+    mkModel(g,"HDFF",dd,Kdparams=c(R2t0=150,R1t0_t=25,R2t0_t=.55, R2t1_t=.55),Keq=c(R2t1_t="R2t0_t"),Kd2Kj=Kmappings),
     mkModel(g,"IIIJp",dd,Kjparams=c(R2t0=Inf, R1t1=Inf, R2t1=Inf, R2t2=0),pparams=c(p=1)),
     mkModel(g,"IIIJ",dd,Kjparams=c(R2t0=Inf, R1t1=Inf, R2t1=Inf, R2t2=1))
 )
@@ -53,7 +53,7 @@ fmodels=lapply(models,fitModel) # assign to avoid dumps
 # now make the 10 models as a doubling of 5, i.e. as in Rt.r
 models=list(
     mkModel(g,"HDDD",dd,Kdparams=c(R2t0=150,R1t0_t=25,R2t0_t=.55, R2t1_t=.55),Keq=c(R1t0_t="R2t0_t",R2t1_t="R2t0_t"),Kd2Kj=Kmappings),
-    mkModel(g,"HDLL",dd,Kdparams=c(R2t0=150,R1t0_t=25,R2t0_t=.55, R2t1_t=.55),Keq=c(R2t1_t="R2t0_t"),Kd2Kj=Kmappings),
+    mkModel(g,"HDFF",dd,Kdparams=c(R2t0=150,R1t0_t=25,R2t0_t=.55, R2t1_t=.55),Keq=c(R2t1_t="R2t0_t"),Kd2Kj=Kmappings),
     mkModel(g,"IIIJ",dd,Kjparams=c(R2t0=Inf, R1t1=Inf, R2t1=Inf, R2t2=1)),
     mkModel(g,"IIJI",dd,Kjparams=c(R2t0=Inf, R1t1=Inf,   R2t1=1,   R2t2=Inf)),
     mkModel(g,"IIJJ",dd,Kjparams=c(R2t0=Inf, R1t1=Inf,   R2t1=1,   R2t2=1))

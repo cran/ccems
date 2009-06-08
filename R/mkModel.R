@@ -1,12 +1,15 @@
 `mkModel` <-
-    function(g,mid,d=NULL,Kjparams=NULL,Kdparams=NULL,Keq=NULL,Kd2KjLst=NULL,pparams=c(p=1i),kparams=NULL,keq=NULL,
-        tightLogic=TRUE,indx=NULL,nParams=NULL)  
+    function(g,mid,d=NULL,Kjparams=NULL,Kdparams=NULL,Keq=NULL,Kd2KjLst=NULL,pparams=c(p=-1,m1=-90),kparams=NULL,keq=NULL,
+        tightLogic=TRUE,
+        transform=c("boxCox","relResid","none","sqrt","log"),lam=0.5, 
+        indx=NULL,nParams=NULL)
 { 
 # Numbers on the left half plane or imaginary axis are fixed to their (complex number) modulus. Thus, either purely imaginary numbers or 
 # negative numbers can be used as initial parameter values as a conventient way to indicate that the parameter values are to be fixed. 
 # 
 #	One of Kj or Kd should be NULL. The other then should be used
 #	print(Kdparams)
+  transform=match.arg(transform)
   Kjparams=unlist(Kjparams);pparams=unlist(pparams);kparams=unlist(kparams)
   if (is.null(Kjparams)&is.null(Kdparams)) {print("One of Kjparams or Kdparams must be specified."); return(0)}
   if (!is.null(Kjparams)&!is.null(Kdparams)) {print("Only one of Kjparams or Kdparams can be specified."); return(0)}
@@ -34,7 +37,8 @@
     paste(basK,basn,sep="")
   }
   
-  params = data.frame(initial=Mod(vparams),final=Mod(vparams),opt=(Re(vparams)>0),  # note negative treated like imaginary here
+  params = data.frame(initial=abs(vparams),final=abs(vparams),opt=(vparams>0),  # only use negatives for fixed params
+#      params = data.frame(initial=Mod(vparams),final=Mod(vparams),opt=(Re(vparams)>0),  # note negative treated like imaginary here
       constr=rep("none",nParams),stringsAsFactors=FALSE)
 #  print(params)
   if (!is.null(Keq)) {
@@ -45,18 +49,23 @@
     params[names(keq),"constr"]=keq
     params[names(keq),"opt"]=FALSE 
   }
-  params[Mod(vparams)==Inf,"opt"]=FALSE
-  params[Mod(vparams)==0,"opt"]=FALSE
+#  params[Mod(vparams)==Inf,"opt"]=FALSE
+#  params[Mod(vparams)==0,"opt"]=FALSE
+  params[vparams==Inf,"opt"]=FALSE
+  params[vparams==0,"opt"]=FALSE
   
 #  print(params)
   
 # switch between these two for numeric versus logical
   if (tightLogic)
-    params[(Mod(vparams)==0)&((1:nParams)<=nSysParams),c("initial","final")]=0  else 
+        params[(vparams==0)&((1:nParams)<=nSysParams),c("initial","final")]=0  else 
+#        params[(Mod(vparams)==0)&((1:nParams)<=nSysParams),c("initial","final")]=0  else 
   {
     eps=.0001
-    params[(Mod(vparams)==0)&((1:nParams)<=nSysParams),c("initial","final")]=eps
-    Kparams[(Mod(Kparams)==0)]=eps
+    params[(vparams==0)&((1:nParams)<=nSysParams),c("initial","final")]=eps
+    Kparams[Kparams==0]=eps
+#    params[(Mod(vparams)==0)&((1:nParams)<=nSysParams),c("initial","final")]=eps
+#    Kparams[(Mod(Kparams)==0)]=eps
   }
   
 #	codeS=NULL  
@@ -101,13 +110,18 @@
   posReactantsD=NULL
   if (!is.null(d)) {
     nms=names(d)
-    if (length(out<-which(nms=="v"))>0) {typeYD="v";posY=out}
+    if (length(out<-which(nms=="k"))>0) {typeYD="k";posY=out}
     if (length(out<-which(nms=="m"))>0) {typeYD="m";posY=out}
+    if (length(out<-which(nms=="P1"))>0) {
+      typeYD="P"
+      posY=out:length(nms)
+    }
     posReactantsD=rep(0,g$nAtomS)
-    for (i in 1:g$nAtomS) posReactantsD[i]=which(nms == paste(g$atomS[i],"T",sep=""))
+    posReactantsD[1]=which(nms == paste(g$hubChar,"T",sep=""))
+    for (i in 2:g$nAtomS) posReactantsD[i]=which(nms == paste(g$atomS[i],ifelse(g$free,"F","T"),sep=""))
   }
   c(g,list(mid=mid,params=params,Kparams=Kparams,Kj=Kj,codeS=codeS,Kd2Kj=Kd2KjLst[[codeS]],
-          fitS="not fitted yet", typeYD=typeYD,nParams=nParams,
+          fitS="not fitted yet", typeYD=typeYD,nParams=nParams,transform=transform,lam=lam,
           posY=posY,posReactantsD=posReactantsD,d=d,indx=indx   # position of first reactant is position of central protein
       )) 
 }

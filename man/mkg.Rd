@@ -6,7 +6,7 @@
   If \code{TCC} is \code{TRUE} (default) it also automatically generates 
   and compiles total concentration constraint C code and stores it in the \code{models} subdirectory.
 }
-\usage{ mkg(strct,monomerMass=90,TCC=TRUE,activity=FALSE) }
+\usage{ mkg(strct,TCC=TRUE,activity=FALSE,free=FALSE) }
 \arguments{
   \item{strct}{ The thread topology of the equilibrium network 
   (see \code{\link{ccems}}). The slots of this list structure are:
@@ -16,11 +16,11 @@
       character vectors of non-head thread nodes. 
                            Naming conventions are given below under \code{Z}. 
                            }
-  \item{monomerMass}{The hub protein's monomer mass in kDa. The default is 90 for the big (R1) subunit of ribonucleotide reductase (RNR). }
   \item{TCC}{This is \code{TRUE} if total concentration constraints (TCCs) are to be used. If so, model C code is automatically generated
   and compiled. If \code{TCC} is \code{FALSE} a rational polynomial model is automatically generated as an R function component of the output.  
   Use of rational polynomial models assumes that the approximations [Xfree] = [XT] are reasonable for all non-hub species X (i.e. ligands).}
-  \item{activity}{If \code{TRUE} data fitted is enzyme activity data. Currently this should be \code{!TCC}. }
+  \item{activity}{If \code{TRUE} data fitted is enzyme activity data. In this case the substrate variable should be named S. }
+  \item{free}{Set \code{TRUE} if non-hub reactants are to be treated as free concentrations.  }
 }
 
 

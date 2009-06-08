@@ -14,7 +14,8 @@
   \item{predict}{ A dataframe of total concentrations of the reactants 
   at which response predictions are desired.  }
   \item{typeYP}{ The type of output data desired for the predictions. 
-  Options are "m" and "v" for average mass and reaction velocity, respectively.  }
+  Options are "m" and "v" for average mass and reaction velocity, respectively.
+  The option "P" (proportions) for mass distribution data is still in development.   }
 }
 \details{
   This function is the workhorse core of the nonlinear least squares 
@@ -75,7 +76,8 @@ topology <- list(
 g <- mkg(topology,TCC=TRUE) 
 d=subset(RNR,(year==2001)&(fg==1)&(t>0)&(G==0),select=c(R,t,m,year))
 names(d)[1:2] <-c("RT","tT") 
-mdl=mkModel(g,"IIIJ",d,Kjparams=c(R2t0=Inf, R1t1=Inf,R2t1=Inf, R2t2=1),pparams=c(p=1))
+mdl=mkModel(g,"IIIJ",d,Kjparams=c(R2t0=Inf, R1t1=Inf,R2t1=Inf, R2t2=1),
+                     pparams=c(p=1))
 fmdl <- fitModel(mdl)
 pt=c(.1,1:20)
 predict <- data.frame(RT = rep(7.6,length(pt)), tT = pt)

@@ -1,2 +1,2 @@
-import(odesolve)
+import(odesolve,PolynomF)
 export(ems,mkg,mkModel,mkGrids,mkSpurs,mkKd2Kj,simulateData,fitModel,mkHTML,testgC)

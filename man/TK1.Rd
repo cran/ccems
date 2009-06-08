@@ -25,6 +25,7 @@
     \item{\code{page}}{The page number of the article.}
     \item{\code{frstAut}}{The first author of the article. This is a factor.  }
     \item{\code{index}}{The articles indexed as 1 through 5.  }
+    \item{\code{k}}{The measured/average activity in 1/sec per enzyme molecule present.  }
   }
 }
 
@@ -37,38 +38,42 @@
 library(ccems)
 ## Warning: the next line clears all existing figures!!
 if (!is.null(dev.list())) for (i in 2:max(dev.list())) dev.off(i);
-if (.Platform$OS.type=="windows") 
- windows(width = 9, height = 4,restoreConsole = TRUE) else X11(width=9,height=4)
-par(mfcol=c(2,5))
-for (i in 1:5) {
-d=subset(TK1,index==i,select=c(E,S,v,frstAut,year))
-## for Birringer, 30 uL vessel and 306 pmoles/L= .000306 pmoles/uL 
-##   and thus .000306*30= .00918 pmoles/30 uL, i.e. 
-if (i==1) d=transform(d,v=v/(60*.00918))# v now in pmoles/sec/pmole = 1/sec
-if (i>1) d=transform(d,v=v/(.04*60))# v now in umole/s/umole = 1/sec
-plot(d$S,d$v,xlab="Total [dT]",log="xy", ylab="reaction velocity (1/sec)", 
-         main=paste(d[1,"frstAut"],d[1,"year"]))
-## Note that the specific activity is ~16 fold higher in non-Birringer data
-## In the Hill fits V is the rate at which enzyme bound substrate becomes product  
-hillda<-nls(v~V*alpha*S^h/(1+alpha*S^h),d,start=list(V=5,alpha=1,h=1))
-print(hillda)
-## print(summary(hillda))
-S50=1/(hillda$m$getPars()["alpha"]^(1/hillda$m$getPars()["h"]))
-print(S50)
-lgx=log(d$S)
-upr=range(lgx)[2]
-lwr=range(lgx)[1]
-del=(upr-lwr)/50
-fineX=exp(seq(lwr,upr,by=del))
-lines(fineX,predict(hillda,list(S=fineX)),col="blue",lwd=1)
-plot(hillda$m$fitted(),hillda$m$resid(),xlab="fitted value",
-                                        ylab="residual",main="Hill")
-## Note that variance increases with the mean in non-Birringer data
-## and that the 2000 and 1993 Hill fits are poor at low v (and [S])
+for (j in 1:2) {
+  if (.Platform$OS.type=="windows") 
+    windows(width = 10, height = 4,restoreConsole = TRUE,
+    ypos=ifelse(j==2,-50,0)) else X11(width=10,height=4)
+  par(mfcol=c(2,5),mar=c(4,4,2,1)+.1)
+  for (i in 1:5) {
+    d=subset(TK1,index==i,select=c(E,S,k,frstAut,year))
+    if (j==1) 
+      hillda<-nls(k~kmax*(S/S50)^h/(1+(S/S50)^h),d,start=list(kmax=5,S50=1,h=1))
+    if (j==2) 
+      hillda<-nls(k~kmax*(S/S50)^h/(1+(S/S50)^h),d,
+                  start=list(kmax=5,S50=1,h=1),weights=1/k^2)
+    print(hillda)
+    plot(d$S,d$k,xlab="Total [dT]",log="xy", ylab="k (1/sec)", 
+        main=paste(d[1,"frstAut"],d[1,"year"]))
+    mtext(paste("N =",length(d$k)),line=-3,side=1,font=1,cex=0.7)
+    mtext(paste("Hill Coeff = ",format(hillda$m$getPars()["h"],digits=3),sep="")
+           ,line=-2,side=1,font=1,cex=0.7)
+    ## Note that the specific activity is ~16 fold higher in non-Birringer data
+    lgx=log(d$S)
+    upr=range(lgx)[2]
+    lwr=range(lgx)[1]
+    del=(upr-lwr)/50
+    fineX=exp(seq(lwr,upr,by=del))
+    lines(fineX,predict(hillda,list(S=fineX)),col="black",lwd=1)
+    plot(hillda$m$fitted(),hillda$m$resid(),xlab="Fitted Value",
+        ylab="Residual",mar=c(2,2,0,1)+.1)
+    ## Note that variance increases with the mean in non-Birringer data
+    ## and that the 2000 and 1993 Hill fits are poor at low k (and [S])
+  }
 }
 
+\dontrun{
 if (.Platform$OS.type=="windows")  # now create a window for ccems fits 
- windows(width = 9, height = 4,restoreConsole = TRUE) else X11(width=9,height=4)
+ windows(width = 10, height = 4,restoreConsole = TRUE, ypos=50) else 
+         X11(width=10,height=4)
 library(ccems)
 topology <- list(  
     heads=c("E1S0"), # E1S0 = substrate free E
@@ -81,17 +86,14 @@ topology <- list(
 g <-mkg(topology, activity=TRUE,TCC=FALSE)
 
 getKk <- function(x) {t(x$report[c(paste("E1S",0:3,"_S",sep=""),
-                                 paste("kE1S",1:4,sep="")),"final",drop=FALSE])}
+                       paste("kE1S",1:4,sep="")),"final",drop=FALSE])}
 getAIC <- function(x) { x$report["AIC","final"]}
 getSSE <- function(x) { x$report["SSE","final"]}
-
 outs=list(NULL)
-par(mfcol=c(2,5))
+par(mfcol=c(2,5),mar=c(4,4,2,1)+.1)
 for (i in 1:5) {
-d=subset(TK1,index==i,select=c(E,S,v,frstAut,year))
-if (i==1) d=transform(d,E=E/4,v=E*v/(60*.00918))# v now in uM/sec
-if (i>1) d=transform(d,E=E/4,v=E*v/(.04*60))# v now in uM/sec
-plot(d$S,d$v,xlab="Total [dT]",log="xy", ylab="reaction velocity (1/sec)", 
+d=subset(TK1,index==i,select=c(E,S,k,frstAut,year))
+plot(d$S,d$k,xlab="Total [dT]",log="xy", ylab="k (1/sec)", 
          main=paste(d[1,"frstAut"],d[1,"year"]))
 names(d)[1:2]= c("ET","ST")
 tops=ems(d,g,maxTotalPs=3,doSpurs=FALSE)# takes ~15 sec for each dataset
@@ -101,7 +103,7 @@ lwr=range(lgx)[1]
 del=(upr-lwr)/50
 fineX=exp(seq(lwr,upr,by=del))
 predict <- data.frame(ET = rep(d$ET[1],length(fineX)), ST = fineX)
-df <- simulateData(tops[[1]],predict=predict,typeYP="v")$predict  
+df <- simulateData(tops[[1]],predict=predict,typeYP="k")$predict  
 lines(df$ST,df$EY) 
 Kk=lapply(tops,getKk)
 nms=names(Kk)
@@ -121,13 +123,14 @@ ma=exp(wgts\%*\%log(M)) # average in space of gibbs free energy changes
 dataID=paste(d[1,"frstAut"],d[1,"year"],sep="")
 outs[[dataID]]$df=df
 outs[[dataID]]$ma=ma
-plot(tops[[1]]$d$EY,tops[[1]]$res,xlab="fitted value",
-                           ylab="residual",main=tops[[1]]$mid)
+plot(tops[[1]]$d$EY,tops[[1]]$res,xlab="Fitted Value",
+               ylab="Residual",main=tops[[1]]$mid)
 ## Note that the 2000 and 1993 fits are now improved 
 }
 outs=outs[-1] # remove leading NULL
 print(outs)   # compare model averages across datasets
 par(mfrow=c(1,1))
+}  
 
 }
 \keyword{datasets}

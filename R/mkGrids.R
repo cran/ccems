@@ -1,5 +1,7 @@
 `mkGrids` <-
-    function(g,maxTotalPs=NULL,pRows=FALSE,contig=TRUE,atLeastOne=TRUE,IC=1,kIC=1,fullGrid=FALSE) {
+    function(g,maxTotalPs=NULL,minTotalPs=NULL,
+        contig=TRUE,atLeastOne=TRUE,atLeastOneOfEach=FALSE,KIC=1,kIC=1,fullGrid=FALSE,
+        m1=-90,p=-1,forceM1=FALSE,forceP=FALSE) {
   # This function makes a chunk of grid graph models. It is less advanced than its counterpart mkSpurs because I still need a way
   # of going through this model space systematically with increasing numbers of parameters. Thus, it does 
   # not have state inputs and output. Note that it is implicit that R is always a thread head too
@@ -125,7 +127,7 @@
   
   spurKOThreads<-function(mat,mat0,g,iSite,jj) {
     # This function takes the full block model and generates spur like knock downs of threads (like nodes)
-  threadNumbs=g$threadsWithinSites[[iSite]]
+    threadNumbs=g$threadsWithinSites[[iSite]]
     for (iBspurs in 1:length(threadNumbs)) { 
       S=combn(threadNumbs,iBspurs)
 #     print(S)
@@ -145,7 +147,7 @@
           if (nHdOuts>1) 
             for (iHdOuts in 1:nHdOuts) {
               H=combn(hdOuts,iHdOuts)
-              print(H)
+#              print(H)
               for (kHdOuts in 1:dim(H)[2]) {
                 currHdOuts=t(H[,kHdOuts,drop=FALSE])
                 mat=rbind(mat,matHS)
@@ -166,7 +168,7 @@
   }  # END spurKOThreads
   
   
-  mkBigMats<-function(mats,g)
+  mkBigMats<-function(mats,g,p) #,forceP)
   { # This function forms the product model space of the site spaces (matrices) of the list mats
     mylen<-function(x) dim(x)[1]
 #    nSites=length(g$strct$sites)
@@ -221,13 +223,18 @@
     nBmats[]=1
     nBmats[Bmats=="I"]=Inf
     Bmats=nBmats
-    Bmats=cbind(nParams=xx,as.data.frame(Bmats),p = -1)
-    if (pRows) {pBmats=Bmats; 
-      rownames(pBmats)=paste(rownames(Bmats),"p",sep=""); 
-      pBmats[,"p"]=1; 
-      pBmats[,"nParams"]=pBmats[,"nParams"]+1; 
-      Bmats=rbind(Bmats,pBmats)
-    }
+    if (p>0) pRows=TRUE else pRows=FALSE
+#    if (forceP) {
+#      Bmats=cbind(nParams=xx,as.data.frame(Bmats),p = abs(p))
+#    } else  {
+      Bmats=cbind(nParams=xx,as.data.frame(Bmats),p = -abs(p))
+      if (pRows) {pBmats=Bmats; 
+        rownames(pBmats)=paste(rownames(Bmats),"p",sep=""); 
+        pBmats[,"p"]=p; 
+        pBmats[,"nParams"]=pBmats[,"nParams"]+1; 
+        Bmats=rbind(Bmats,pBmats)
+      }
+#    }
     Bmats=Bmats[order(Bmats$nParams),]
     Bmats=cbind(Bmats,indx=1:dim(Bmats)[1])
     Bmats[2:(g$nZ+1)]=lapply(Bmats[2:(g$nZ+1)],as.numeric)
@@ -259,6 +266,7 @@
     newBmats
   }
   
+  
   # ***************** FUNCTION DEFINITIONS ABOVE **************************
   
   options(stringsAsFactors = FALSE)
@@ -286,39 +294,95 @@
   } # loop on iSite
 #  print("mats is")  
 #  print(mats)
-  Bmats=mkBigMats(mats,g)
+  Bmats=mkBigMats(mats,g,p) #,forceP)
 #  break
 #  if (!is.null(maxnPs)) Bmats=Bmats[Bmats$nParams<=maxnPs,]
   chunk=Bmats
-  Keqs=mkEq(g,chunk)
+  print(chunk)
   keqs=mkEq(g,chunk,activity=TRUE)
+  Keqs=mkEq(g,chunk) # whether g$activity if TRUE or FALSE, we want activity = FALSE in this function call
+  print(chunk)
+  print(Keqs)
   if (!fullGrid){ # if full grid not wanted, remove it
-    pNulls=sapply(Keqs,is.null)
+    pNulls=which(sapply(Keqs,is.null))
 # the next two lines remove grids that are really spurs
-    chunk=chunk[-which(pNulls),] 
-    Keqs=Keqs[-which(pNulls)]
-    keqs=keqs[-which(pNulls)]
+    if (length(pNulls)>0){
+      chunk=chunk[-pNulls,] 
+      Keqs=Keqs[-pNulls]
+      keqs=keqs[-pNulls]
+    }
   }
+  print(Keqs)
+  
+  
+  
+  
+  
   if(atLeastOne) { #then also remove models without at least one maximum size oligo
     zor1=lapply(chunk,"%in%",c(0,1)) 
     newW=g$W[-(1:(g$nAtomS-1)),g$hubChar]  # leave one atom row in as spacer for nParams column of chunk 
     colNums=which(newW==max(newW))
     Irows<-apply(as.matrix(as.data.frame(zor1[colNums])),1,sum)>0
     chunk=chunk[Irows,] # grab rows with at least one complex of maximum size 
-    Keqs=Keqs[Irows]  # shortening in these next two lines may not be critical
-    keqs=keqs[Irows]
+#    Keqs=Keqs[Irows]  # shortening in these next two lines may not be critical
+#    keqs=keqs[Irows]
+  uniW=unique(newW)
+  uniW=uniW[uniW<max(uniW)]
+  uniW=uniW[uniW>1]
   }
+  if(atLeastOneOfEach) { #then model must have at least one term of each oligo size
+    for (i in uniW) {          # this is in for mass distribution data
+      zor1=lapply(chunk,"%in%",c(0,1)) 
+#      newW=g$W[-(1:(g$nAtomS-1)),g$hubChar]  # leave one atom row in as spacer for nParams column of chunk 
+      colNums=which(newW==i)          # i.e. leave in one atom row to make this index right
+      Irows<-apply(as.matrix(as.data.frame(zor1[colNums])),1,sum)>0
+      chunk=chunk[Irows,] # grab rows with at least one complex of maximum size 
+    }
+  }
+
 #  print(chunk)
 #  print(Bmats)
   if (g$activity) chunk=mkk(chunk,Bmats,g,kIC) 
+  chunk=mkm(chunk,m1)
 #  print(chunk)
   if (!is.null(maxTotalPs)) chunk=chunk[chunk$nParams<=maxTotalPs,]
-  chunk$indx=1:(dim(chunk)[1])
+  if (!is.null(minTotalPs)) chunk=chunk[chunk$nParams>=minTotalPs,]
+  if (forceM1) chunk=chunk[chunk$m1>0,] 
+  if (forceP) chunk=chunk[chunk$p>0,] 
+  
+  
+  
 # new block to handle user defined ICs on K params (for readability only bases are entered in chunk)
   KCols=chunk[,2:(g$nZ+1)]
-  KCols[KCols==1]=IC
+  KCols[KCols==1]=KIC
   chunk[,2:(g$nZ+1)]=KCols
-  if (!g$activity) keqs=NULL 
+  I=order(chunk$nParams)
+  chunk=chunk[I,]
+  chunk$indx=1:(dim(chunk)[1])
+  if (!g$activity) keqs=NULL
   list(chunk=chunk,Keqs=Keqs,keqs=keqs)
 }
+
+
+# by placing this last function definition after the main function if becomes available to mkSpurs  
+
+mkm<-function(chunk,m1){
+  if (m1<0) {
+    chunk=transform(chunk,m1=m1)} else {
+    orig=chunk
+    orig$nParams=orig$nParams+1
+    nms=row.names(orig)
+    nnms=paste(nms,"m",sep="")
+    row.names(orig)<-nnms
+    chunk=transform(chunk,m1=-m1) 
+    orig=transform(orig,m1=m1) 
+    chunk=rbind(chunk,orig)
+  }
+  chunk
+}
+
+
+
+
+
 

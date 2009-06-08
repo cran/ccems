@@ -10,8 +10,10 @@
               equal to others on an average per occupied catalytic site basis can also be made.  }
 
 \usage{ mkModel(g,mid,d=NULL,Kjparams=NULL,Kdparams=NULL,Keq=NULL,
-        Kd2KjLst=NULL, pparams=c(p=1i), kparams=NULL,
-        keq=NULL, tightLogic=TRUE, indx=NULL, nParams=NULL) }
+        Kd2KjLst=NULL, pparams=c(p=-1,m1=-90), kparams=NULL,
+        keq=NULL, tightLogic=TRUE, 
+        transform=c("boxCox","relResid","none","sqrt","log"),lam=0.5,  
+        indx=NULL, nParams=NULL) }
 \arguments{
   \item{g}{ The output of \code{mkg}.  }
   \item{mid}{ The name of the specific hypothesis/model. The convention is that I stands for infinity, 
@@ -39,13 +41,24 @@
                    An appropriate component of this list is assigned to \code{g$Kd2Kj}.
                     Such functions are needed so that one generic full spur graph
                    model, typically compiled in C, can be used by all of the specific hypotheses/models of the model space. }
-  \item{pparams}{ This is the fraction of hub protein that is active. The pure imaginary default of \code{1i} keeps it fixed at 1 (minus 1 also achieves this). 
-                 An initial value of +1 indicates that it is to be optimized.     }
+  \item{pparams}{ The \code{p} component of this vector is the fraction of hub protein that is active. 
+                  The negative default of \code{-1} keeps it fixed at 1. 
+                 An initial value of +1 indicates that it is to be optimized. The \code{m1} component is
+            monomer mass in kDa. 
+               The default is 90 for the big (R1) subunit of ribonucleotide reductase (RNR).
+               It is negative to stay fixed and
+                positive to be the starting values in the parameter optimization.}     
   \item{kparams}{ These are the enzyme activity parameter initial values, 
   if the data is reaction rate data, else it should be \code{NULL}.   }
   \item{keq}{ These are the equality constraints (if any) that are being placed on the enzyme activity parameters.  }
   \item{tightLogic}{ If \code{tightLogic} is true, instead of taking Kj to .001 as an approximation of infinitely tight binding, 
                               logic is used to model Kj = 0 exactly. }
+  \item{transform}{If not \code{"none"} data and model are transformed before forming residuals. 
+                   This is used to stabilize enzyme activity variances. Other options are \code{"boxCox"} for Box-Cox
+                   transformations, in which case \code{lam} below is used as lambda, 
+                   \code{"relResid"} to divide the residuals by the data, 
+                   and square root and natural log transformations using \code{"sqrt"} and \code{"log"}, respectively.}
+ \item{lam}{ The lambda parameter of the Box-Cox transformation, if used. }
   \item{indx}{ This is an integer index of the model.  The current
                hypothesis is the \code{indx}th model of the model space.  }
   \item{nParams}{ The number of model parameters, i.e. the first column of a \code{chunk} data frame. }
@@ -90,7 +103,7 @@ topology <- list(
                 )
         )
 ) 
-g <- mkg(topology,TCC=TRUE) 
+g <- mkg(topology) 
 
 data(RNR)
 dRt <- subset(RNR,(year==2001)&(fg==1)&(G==0)&(t>0),select=c(R,t,m,year))
@@ -107,7 +120,8 @@ fmdl <- fitModel(mdl)
 gridL <- mkGrids(g,maxTotalPs=3)
 chunk <- gridL$chunk
 Keqs <- gridL$Keqs
-mdl <- mkModel(g,"HDFF",dRt,Kdparams=chunk["HDFF",2:(g$nZ+1)], Keq=Keqs[["HDFF"]], Kd2KjLst=Kmapping,
+mdl <- mkModel(g,"HDFF",dRt,Kdparams=chunk["HDFF",2:(g$nZ+1)], 
+       Keq=Keqs[["HDFF"]], Kd2KjLst=Kmapping,
        pparams=chunk["HDFF","p",drop=FALSE],indx=chunk["HDFF","indx"])
 print(mdl)
 print(chunk)
